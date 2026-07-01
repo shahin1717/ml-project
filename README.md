@@ -11,27 +11,37 @@ To answer this question, we implement key machine learning algorithms **from scr
 
 ## 📋 Table of Contents
 - [Project Overview](#-project-overview)
-- [Requirements & What We Need to Do](#-requirements--what-we-need-to-do)
-  - [1. Module Implementations (From Scratch)](#1-module-implementations-from-scratch)
+- [Requirements & Specifications](#-requirements--specifications)
+  - [1. Supervised Module Implementations (From Scratch)](#1-supervised-module-implementations-from-scratch)
   - [2. Unsupervised Pipeline (From Scratch)](#2-unsupervised-pipeline-from-scratch)
-  - [3. Experimental Design](#3-experimental-design)
-  - [4. Deliverables](#4-deliverables)
+  - [3. Preprocessing & Metrics](#3-preprocessing--metrics)
+- [Experimental Design](#-experimental-design)
 - [Project Directory Structure](#-project-directory-structure)
 - [Setup & Installation](#-setup--installation)
 - [How to Run](#-how-to-run)
-- [Quality Assurance & Constraints](#-quality-assurance--constraints)
-- [Grading & Evaluation Rubric](#-grading--evaluation-rubric)
+- [Deliverables](#-deliverables)
+- [Grading Rubric & Penalty Rules](#-grading-rubric--penalty-rules)
+  - [Grading Breakdown](#grading-breakdown)
+  - [Automatic Deductions](#automatic-deductions)
+  - [Contribution Report Penalties](#contribution-report-penalties)
+- [Advanced Bonuses (Optional)](#-advanced-bonuses-optional)
 
 ---
 
 ## 🔍 Project Overview
+- **Released:** June 30, 2026
+- **Due Date:** July 16, 2026 at 23:59 (UTC+4)
+- **Workload:** ~35–40 person-hours over 12 days
+- **Team Size:** 3 students (2 or 4 with approval)
+- **Submission:** GitHub repo tag `v1.0-final` + Moodle + Oral Defense
+- **Team Registration:** Email group composition and dataset choices to **sultan.musayeva@aiacademy.az** by Day 2 (June 23, 23:59 UTC+4).
 
 The objective is to implement three main supervised learning models:
 1. **Decision Tree** (CART algorithm)
 2. **AdaBoost** (discrete SAMME with decision stumps)
 3. **Random Forest** (bagged trees with feature sub-sampling)
 
-We also implement three unsupervised learning methods:
+We also implement three unsupervised learning methods to explore and visualize the data:
 1. **PCA** (Principal Component Analysis)
 2. **K-Means Clustering**
 3. **DBSCAN Clustering**
@@ -40,9 +50,9 @@ Finally, we conduct a series of controlled experiments evaluating scaling behavi
 
 ---
 
-## 🎯 Requirements & What We Need to Do
+## 🎯 Requirements & Specifications
 
-### 1. Module Implementations (From Scratch)
+### 1. Supervised Module Implementations (From Scratch)
 All supervised and unsupervised algorithms must be written without using scikit-learn's model classes (scikit-learn is allowed *only* as a validation baseline, and for calculating the Adjusted Rand Index).
 
 #### 🌳 Module 1 — Decision Tree Classifier (`src/trees/decision_tree.py`)
@@ -94,7 +104,14 @@ Used to analyze and visualize datasets before and after classification.
 
 ---
 
-### 3. Experimental Design (`experiments/`)
+### 3. Preprocessing & Metrics
+- **Preprocessing (`src/utils/preprocessing.py`):** Custom implementations of `StandardScaler`, `LabelEncoder`, `train_test_split`, and class balancing (oversampling/SMOTE).
+- **Evaluation Metrics (`src/metrics/evaluation.py`):** Custom metrics for `accuracy_score`, `confusion_matrix`, and `precision_recall_f1` (macro F1).
+
+---
+
+## 🎨 Experimental Design
+
 All experiments must be automated and fully reproducible via a single script: `python src/experiments/run_all.py`.
 
 1. **Baseline Comparison:**
@@ -121,15 +138,6 @@ All experiments must be automated and fully reproducible via a single script: `p
    - PCA 2D scatter plots colored by: True labels, K-Means clusters, and DBSCAN clusters.
    - Report Adjusted Rand Index (ARI) for K-Means and DBSCAN.
    - Generate a k-distance plot to justify the choice of DBSCAN parameter $\varepsilon$.
-
----
-
-### 4. Deliverables
-*   **Source Code:** Checked into the GitHub repository under git tag `v1.0-final`.
-*   **IEEE-Style Report:** Compiled PDF (`report/report.pdf`), 2-column format, exactly **6–8 pages** long (excluding references).
-*   **Professional Slide Deck:** Slide deck PDF (`presentation/presentation.pdf`), 10–12 slides summarizing the project.
-*   **Contribution Report:** PDF file (`contribution_report.pdf`) at the repository root outlining what parts of the code, experiments, slides, and report each member did, signed by all members.
-*   **Oral Defense:** A 10-minute presentation followed by a 10–12 minute Q&A session.
 
 ---
 
@@ -232,20 +240,55 @@ pytest --cov=src tests/
 
 ---
 
-## ⚠️ Quality Assurance & Constraints
+## 📦 Deliverables
+1. **GitHub Repository:** Tagged `v1.0-final`. Contains code, tests, configs, one-command execution.
+2. **IEEE-Style Paper (`report/report.pdf`):** 2-column format, exactly **6–8 pages** long (excluding references).
+3. **Slide Deck (`presentation/presentation.pdf`):** 10–12 slides summarizing key aspects.
+4. **Contribution Report (`contribution_report.pdf`):** Signed report in the root outlining what parts of the code, report, slides, and experiments each member did.
+5. **Oral Defense:** 10-minute presentation followed by a 10–12 minute Q&A session.
 
-To prevent automatic grade deductions, adhere to these strict limits:
-1. **No sklearn classifiers:** Do not use `sklearn.tree` or `sklearn.ensemble` classes for primary runs. Doing so incurs a **-25 points** penalty.
-2. **Deterministic behavior:** Always use `random_state` seeds for splits, bootstrapping, feature selections, and cluster initializations.
-3. **No TODOs / FIXMEs:** Ensure all temporary comments are removed prior to tagging `v1.0-final` (**-3 points** penalty otherwise).
-4. **Test Coverage:** Maintain at least **60% unit test coverage** across implemented source modules (**-5 points** penalty otherwise).
-5. **No hard-coded paths:** Use relative directories or command line arguments to resolve file locations (**-5 points** penalty otherwise).
-6. **Disclose AI tools:** Acknowledge AI utilization (e.g. Copilot, Gemini) in the report's "Tools & Acknowledgements" section.
+---
+
+## 🎖️ Grading Rubric & Penalty Rules
+
+### Grading Breakdown
+Total project value: **100 points**
+*   **Code (45%):**
+    *   Correctness of implementations (18%) — within 2% of sklearn, no sklearn ensemble classes used.
+    *   Code quality & design (9%) — OOP, type hints, docstrings, no magic numbers.
+    *   Unsupervised pipeline (9%) — PCA, K-Means, DBSCAN correct, with visualizations.
+    *   Testing (9%) — pytest coverage $\ge 60\%$, seeded random operations.
+*   **Report (25%):**
+    *   Experimental rigor (10%) — 7 experiments, cross-validation, bias-variance.
+    *   Conceptual depth (9%) — correct math explanations (e.g. AdaBoost weight updates).
+    *   Clarity & format (6%) — IEEE format, page limits, citations.
+*   **Presentation (10%):**
+    *   Slide design (3%) — layout, theme, fonts.
+    *   Data visualization (3%) — clear figures and labels.
+    *   Content organization (4%) — flow, covers all key aspects.
+*   **Oral Defense (20%):**
+    *   Individual understanding (12%) — ability to defend any part of code/math.
+    *   Depth of analysis (5%) — reasoning about failure modes/tradeoffs.
+    *   Clarity under pressure (3%) — handling Q&A questions.
+
+### Automatic Deductions
+*   Using `sklearn.tree` or `sklearn.ensemble` classes for primary runs: **-25 points**.
+*   Team member unable to explain their own module during defense: **-8 points per module**.
+*   Hard-coded file paths or magic constants: **-5 points**.
+*   Test coverage below 60%: **-5 points**.
+*   `TODO` or `FIXME` comments left in final code: **-3 points**.
+*   Missing `run_all.py` or non-reproducible figures: **-5 points**.
+*   Report outside the 6–8 page limit: **-3 points**.
+*   Missing slide deck or late submission: **-5 points**.
+*   Missing contribution report or late submission: **-5 points** (team deduction).
+
+### Contribution Report Penalties
+*   A member who cannot substantiate their claimed contributions: **-8 points**.
+*   Severe contribution imbalances (e.g., one member doing >70% of the work) will result in individual grade reductions.
 
 ---
 
 ## 🎖️ Advanced Bonuses (Optional)
-
 We can achieve up to **+10 bonus points** by implementing and documenting the following extra credit modules:
 *   **Gradient Boosting Machine (GBM) [ +4 pts ]:** Basic GBM implementation with log-loss compared against AdaBoost.
 *   **t-SNE Visualization [ +2 pts ]:** Implement or wrap t-SNE for comparisons with PCA.
