@@ -1,0 +1,48 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.env
+.venv
+env/
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+
+# Datasets
+data/
+*.zip
+*.gz
+*.tar
+*.data
+*.test
+
+# Report / LaTeX
+report/*.pdf
+report/*.aux
+report/*.log
+report/*.toc
+report/*.out
+report/*.synctex.gz
+report/*.blg
+report/*.bbl
+report/*.fdb_latexmk
+report/*.fls
+
+# Presentation
+presentation/*.pdf
+presentation/*.aux
+presentation/*.log
+presentation/*.nav
+presentation/*.out
+presentation/*.snm
+presentation/*.toc
+presentation/*.vrb
+
+# IDEs & System
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
