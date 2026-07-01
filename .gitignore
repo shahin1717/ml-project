@@ -11,6 +11,7 @@ env/
 htmlcov/
 .mypy_cache/
 
+
 # Datasets
 data/
 *.zip
@@ -46,3 +47,4 @@ presentation/*.vrb
 .idea/
 .DS_Store
 Thumbs.db
+ml-project.code-workspace
