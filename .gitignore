@@ -48,3 +48,4 @@ presentation/*.vrb
 .DS_Store
 Thumbs.db
 ml-project.code-workspace
+.agents/
