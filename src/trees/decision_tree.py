@@ -156,6 +156,7 @@ def best_split(
     criterion: str = "gini",
     max_features: int | str | None = None,
     rng: Optional[np.random.Generator] = None,
+    parent_impurity: Optional[float] = None,
 ) -> tuple[Optional[int], Optional[float], float]:
     """Find the best (feature, threshold, gain) using an incremental sweep.
 
@@ -180,7 +181,8 @@ def best_split(
 
     classes = np.unique(y)
     total_w = sample_weight.sum()
-    parent_impurity = _impurity_fn(criterion)(y, sample_weight)
+    if parent_impurity is None:
+        parent_impurity = _impurity_fn(criterion)(y, sample_weight)
 
     best_gain: float = -1.0
     best_feature: Optional[int] = None
@@ -339,10 +341,22 @@ class DecisionTree:
         -------
         self
         """
+        X = np.asarray(X)
+        y = np.asarray(y)
+        if X.ndim != 2:
+            raise ValueError(f"X must be 2-D, got shape {X.shape}.")
+        if X.shape[0] != y.shape[0]:
+            raise ValueError(
+                f"X has {X.shape[0]} rows but y has {y.shape[0]} entries."
+            )
         if sample_weight is None:
             sample_weight = np.ones(len(y), dtype=float)
         else:
             sample_weight = np.asarray(sample_weight, dtype=float)
+            if sample_weight.shape[0] != len(y):
+                raise ValueError(
+                    f"sample_weight has {sample_weight.shape[0]} entries but y has {len(y)}."
+                )
 
         self.classes_ = np.unique(y)
         self.n_features_ = X.shape[1]
@@ -387,12 +401,13 @@ class DecisionTree:
         if np.unique(X, axis=0).shape[0] == 1:
             return make_leaf()
 
-        # --- Best split ---
+        # --- Best split --- (pass pre-computed impurity to avoid recomputation)
         feature, threshold, gain = best_split(
             X, y, sample_weight,
             criterion=self.criterion,
             max_features=self.max_features,
             rng=self.rng,
+            parent_impurity=node_impurity,
         )
 
         if feature is None or gain <= 0:
@@ -536,12 +551,14 @@ class DecisionTree:
                 f"impurity={node.impurity:.4f} value={dist_str}"
             )
         else:
+            dist_str = np.array2string(node.value, precision=3, suppress_small=True)
             lines.append(
                 f"{prefix}Split | feature={node.feature} "
                 f"threshold={node.threshold:.4f} "
                 f"impurity={node.impurity:.4f} "
                 f"samples={node.samples} "
-                f"gain={node.impurity_decrease:.4f}"
+                f"gain={node.impurity_decrease:.4f} "
+                f"value={dist_str}"
             )
             self._repr_node(node.left, lines, indent + 1)
             self._repr_node(node.right, lines, indent + 1)
