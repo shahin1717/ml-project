@@ -158,15 +158,19 @@ def best_split(
     rng: Optional[np.random.Generator] = None,
     parent_impurity: Optional[float] = None,
 ) -> tuple[Optional[int], Optional[float], float]:
-    """Find the best (feature, threshold, gain) using an incremental sweep.
+    """Find the best (feature, threshold, gain) using a vectorized cumsum sweep.
+
+    For each candidate feature the samples are sorted once; cumulative weighted
+    class counts are computed via ``np.cumsum`` so the entire sweep over all
+    N-1 cut points is done with numpy C-loops instead of a Python for-loop.
+    Complexity: O(N log N) per feature (sort) + O(N · n_classes) (cumsum).
 
     Thresholds are midpoints between consecutive distinct feature values (DT.3).
-    The sweep is O(N log N) per feature — no repeated O(N) rescans.
 
     Returns
     -------
     (best_feature, best_threshold, best_gain)
-    best_feature is None when no improving split exists.
+    best_feature is None when no valid split exists.
     """
     if rng is None:
         rng = np.random.default_rng()
@@ -180,6 +184,10 @@ def best_split(
         feature_indices = rng.choice(n_features, size=k, replace=False)
 
     classes = np.unique(y)
+    n_classes = len(classes)
+    # Map labels to 0..n_classes-1 for fast indexing
+    class_idx = np.searchsorted(classes, y)   # shape (n_samples,)
+
     total_w = sample_weight.sum()
     if parent_impurity is None:
         parent_impurity = _impurity_fn(criterion)(y, sample_weight)
@@ -190,41 +198,55 @@ def best_split(
 
     for feature in feature_indices:
         order = np.argsort(X[:, feature], kind="mergesort")
-        xs = X[order, feature]
-        ys = y[order]
-        ws = sample_weight[order]
+        xs   = X[order, feature]          # sorted feature values
+        cidx = class_idx[order]           # sorted class indices
+        ws   = sample_weight[order]       # sorted weights
 
-        # Everything starts on the right
-        left_counts: dict = {c: 0.0 for c in classes}
-        right_counts: dict = {c: float(ws[ys == c].sum()) for c in classes}
-        left_w = 0.0
-        right_w = total_w
+        # Weighted one-hot: shape (n_samples, n_classes)
+        w_onehot = np.zeros((n_samples, n_classes), dtype=float)
+        w_onehot[np.arange(n_samples), cidx] = ws
 
-        for i in range(n_samples - 1):
-            c = ys[i]
-            left_counts[c] += ws[i]
-            right_counts[c] -= ws[i]
-            left_w += ws[i]
-            right_w -= ws[i]
+        # left_cum[i] = weighted class counts for samples 0..i (inclusive)
+        left_cum = np.cumsum(w_onehot, axis=0)          # (n_samples, n_classes)
+        left_w   = np.cumsum(ws)                         # (n_samples,)
+        right_cum = left_cum[-1] - left_cum              # (n_samples, n_classes)
+        right_w   = total_w - left_w                     # (n_samples,)
 
-            # Evaluate a threshold only between *distinct* consecutive values
-            if xs[i] == xs[i + 1]:
-                continue
+        # Only evaluate thresholds between *distinct* consecutive values.
+        # valid[i] == True means xs[i] < xs[i+1], so a threshold exists between them.
+        valid = xs[:-1] != xs[1:]                        # (n_samples-1,)
+        if not valid.any():
+            continue
 
-            t = (xs[i] + xs[i + 1]) / 2.0
+        # Slice to candidate cut-points (indices 0..n_samples-2)
+        lc = left_cum[:-1][valid]    # (n_valid, n_classes)
+        lw = left_w[:-1][valid]      # (n_valid,)
+        rc = right_cum[:-1][valid]   # (n_valid, n_classes)
+        rw = right_w[:-1][valid]     # (n_valid,)
 
-            left_imp = _impurity_from_counts(left_counts, left_w, criterion)
-            right_imp = _impurity_from_counts(right_counts, right_w, criterion)
-            gain = (
-                parent_impurity
-                - (left_w / total_w) * left_imp
-                - (right_w / total_w) * right_imp
-            )
+        # Compute impurity at each cut-point vectorially
+        if criterion == "gini":
+            lp = lc / lw[:, None]                        # left class probs
+            rp = rc / rw[:, None]                        # right class probs
+            left_imp  = 1.0 - (lp ** 2).sum(axis=1)     # (n_valid,)
+            right_imp = 1.0 - (rp ** 2).sum(axis=1)
+        else:  # entropy
+            eps = 1e-12
+            lp = lc / lw[:, None]
+            rp = rc / rw[:, None]
+            left_imp  = -(lp * np.log2(lp + eps)).sum(axis=1)
+            right_imp = -(rp * np.log2(rp + eps)).sum(axis=1)
 
-            if gain > best_gain:
-                best_gain = gain
-                best_feature = int(feature)
-                best_threshold = float(t)
+        gains = parent_impurity - (lw / total_w) * left_imp - (rw / total_w) * right_imp
+
+        best_i = int(np.argmax(gains))
+        if gains[best_i] > best_gain:
+            best_gain = float(gains[best_i])
+            best_feature = int(feature)
+            # threshold = midpoint between the two original sorted values
+            valid_idx = np.where(valid)[0]
+            i = valid_idx[best_i]
+            best_threshold = float((xs[i] + xs[i + 1]) / 2.0)
 
     return best_feature, best_threshold, best_gain
 
@@ -410,7 +432,11 @@ class DecisionTree:
             parent_impurity=node_impurity,
         )
 
-        if feature is None or gain <= 0:
+        # Accept zero-gain splits (matches sklearn's min_impurity_decrease=0 default).
+        # This resolves plateau-root cases like XOR where the first split has gain==0
+        # but depth-2 children are pure.  The only hard stop is feature is None,
+        # which means best_split found no valid candidate at all.
+        if feature is None:
             return make_leaf()
 
         left_mask = X[:, feature] <= threshold
