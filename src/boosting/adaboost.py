@@ -7,7 +7,7 @@ Follows requirements in §2.2 of ML_FINAL_PROJECT.tex.
 from __future__ import annotations
 
 import math
-from typing import Iterator, Optional, Union
+from typing import Iterator, Optional
 
 import numpy as np
 
