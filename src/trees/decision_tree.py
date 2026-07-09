@@ -118,6 +118,7 @@ class DecisionTree:
         weighted_counts = [np.sum(sample_weight[y == c]) for c in classes]
         return classes[np.argmax(weighted_counts)]
     
+    
 
     def predict(self, X):
         return np.array([self._traverse(x, self.root) for x in X])
