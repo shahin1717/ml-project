@@ -398,6 +398,7 @@ class DecisionTree:
         depth: int,
     ) -> Node:
         n_samples = len(y)
+        assert self.classes_ is not None
         class_dist = _class_distribution(y, sample_weight, self.classes_)
         node_impurity = _impurity_fn(self.criterion)(y, sample_weight)
 
@@ -472,6 +473,7 @@ class DecisionTree:
         -------
         np.ndarray of shape (n_samples, n_classes)
         """
+        assert self.root is not None
         return np.array([self._traverse_proba(x, self.root) for x in X])
 
     def predict(self, X: np.ndarray) -> np.ndarray:
@@ -482,11 +484,16 @@ class DecisionTree:
         np.ndarray of shape (n_samples,)
         """
         proba = self.predict_proba(X)
+        assert self.classes_ is not None
         return self.classes_[np.argmax(proba, axis=1)]
 
-    def _traverse_proba(self, x: np.ndarray, node: Node) -> np.ndarray:
+    def _traverse_proba(self, x: np.ndarray, node: Optional[Node]) -> np.ndarray:
+        assert node is not None
         if node.is_leaf_:
+            assert node.value is not None
             return node.value
+        assert node.feature is not None
+        assert node.threshold is not None
         if x[node.feature] <= node.threshold:
             return self._traverse_proba(x, node.left)
         return self._traverse_proba(x, node.right)
@@ -570,6 +577,7 @@ class DecisionTree:
         if node is None:
             return
         prefix = "  " * indent
+        assert node.value is not None
         if node.is_leaf_:
             dist_str = np.array2string(node.value, precision=3, suppress_small=True)
             lines.append(

@@ -150,6 +150,7 @@ class RandomForestClassifier:
 
     def _compute_oob_score(self, X: np.ndarray, y: np.ndarray) -> float:
         n_samples = X.shape[0]
+        assert self.classes_ is not None
         n_classes = len(self.classes_)
         vote_sums = np.zeros((n_samples, n_classes))
         was_oob = np.zeros(n_samples, dtype=bool)
@@ -157,7 +158,11 @@ class RandomForestClassifier:
         for tree, oob_idx in zip(self.estimators_, self._oob_indices):
             if len(oob_idx) == 0:
                 continue
-            vote_sums[oob_idx] += tree.predict_proba(X[oob_idx])
+            tree_proba = tree.predict_proba(X[oob_idx])
+            assert tree.classes_ is not None
+            for j, c in enumerate(tree.classes_):
+                forest_j = np.where(self.classes_ == c)[0][0]
+                vote_sums[oob_idx, forest_j] += tree_proba[:, j]
             was_oob[oob_idx] = True
 
         if not was_oob.any():
@@ -181,14 +186,20 @@ class RandomForestClassifier:
     def predict_proba(self, X: np.ndarray) -> np.ndarray:
         """Average of each tree's predict_proba. Returns shape (n_samples, n_classes)."""
         X = np.asarray(X)
+        assert self.classes_ is not None
         proba_sum = np.zeros((X.shape[0], len(self.classes_)))
         for tree in self.estimators_:
-            proba_sum += tree.predict_proba(X)
+            tree_proba = tree.predict_proba(X)
+            assert tree.classes_ is not None
+            for j, c in enumerate(tree.classes_):
+                forest_j = np.where(self.classes_ == c)[0][0]
+                proba_sum[:, forest_j] += tree_proba[:, j]
         return proba_sum / len(self.estimators_)
 
     def predict(self, X: np.ndarray) -> np.ndarray:
         """Majority vote (argmax of averaged probabilities)."""
         proba = self.predict_proba(X)
+        assert self.classes_ is not None
         return self.classes_[np.argmax(proba, axis=1)]
 
     # ------------------------------------------------------------------
