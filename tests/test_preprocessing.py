@@ -13,6 +13,8 @@ from src.utils.preprocessing import (
 
 
 def test_load_breast_cancer():
+    if not os.path.exists("data/wdbc.data"):
+        pytest.skip("data/wdbc.data not found. Skipping test.")
     X, y = load_breast_cancer()
     assert X.shape == (569, 30)
     assert y.shape == (569,)
@@ -46,25 +48,26 @@ def test_standardize():
 
 
 def test_load_adult():
-    # Only test if files exist
-    if os.path.exists("data/adult.data") and os.path.exists("data/adult.test"):
-        X_train, X_test, y_train, y_test = load_adult()
-        assert X_train.shape[0] > 0
-        assert X_test.shape[0] > 0
-        assert X_train.shape[1] == X_test.shape[1]
-        assert y_train.shape[0] == X_train.shape[0]
-        assert y_test.shape[0] == X_test.shape[0]
-        assert set(np.unique(y_train)) == {0, 1}
-        assert set(np.unique(y_test)) == {0, 1}
+    if not (os.path.exists("data/adult.data") and os.path.exists("data/adult.test")):
+        pytest.skip("data/adult.data or data/adult.test not found. Skipping test.")
+    X_train, X_test, y_train, y_test = load_adult()
+    assert X_train.shape[0] > 0
+    assert X_test.shape[0] > 0
+    assert X_train.shape[1] == X_test.shape[1]
+    assert y_train.shape[0] == X_train.shape[0]
+    assert y_test.shape[0] == X_test.shape[0]
+    assert set(np.unique(y_train)) == {0, 1}
+    assert set(np.unique(y_test)) == {0, 1}
 
 
 def test_load_covertype():
-    if os.path.exists("data/covtype.data"):
-        X, y = load_covertype(n_samples=200, random_state=42)
-        assert X.shape == (200, 54)
-        assert y.shape == (200,)
-        # Classes should be 0-indexed (0 to 6)
-        assert np.all(y >= 0) and np.all(y <= 6)
+    if not os.path.exists("data/covtype.data"):
+        pytest.skip("data/covtype.data not found. Skipping test.")
+    X, y = load_covertype(n_samples=200, random_state=42)
+    assert X.shape == (200, 54)
+    assert y.shape == (200,)
+    # Classes should be 0-indexed (0 to 6)
+    assert np.all(y >= 0) and np.all(y <= 6)
 
 
 def test_load_mnist_subset():
