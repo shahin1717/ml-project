@@ -1,8 +1,16 @@
 from __future__ import annotations
 import argparse
-from src.experiments.scaling import run_experiment_1
-from src.experiments.adaboost_scaling import run_experiment_2
-from src.experiments.rf_scaling import run_experiment_3
+import os
+import sys
+
+# Ensure project root is in the Python search path to import from the root-level experiments directory
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
+from experiments.scaling import run_experiment_1  # noqa: E402
+from experiments.adaboost_scaling import run_experiment_2  # noqa: E402
+from experiments.rf_scaling import run_experiment_3  # noqa: E402
 
 
 def main() -> None:
