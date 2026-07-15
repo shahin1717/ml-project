@@ -1,5 +1,4 @@
 import numpy as np
-import pytest
 from src.unsupervised.pca import PCA
 from sklearn.manifold import TSNE
 

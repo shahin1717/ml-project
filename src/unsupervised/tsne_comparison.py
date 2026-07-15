@@ -9,10 +9,9 @@ Outputs:
 
 import os
 import time
-import numpy as np
 import matplotlib.pyplot as plt
 from src.unsupervised.pca import PCA
-from sklearn.manifold import TSNE
+from sklearn.manifold import TSNE  # type: ignore
 from src.utils.preprocessing import load_mnist_subset, standardize
 
 # ---------------------------------------------------------------
@@ -32,6 +31,7 @@ pca = PCA(n_components=2)
 X_pca = pca.fit_transform(X_scaled)
 t_pca = time.time() - t0
 
+assert pca.explained_variance_ratio_ is not None
 explained_var = pca.explained_variance_ratio_.sum()
 print(f"PCA: {t_pca:.3f}s | explained variance (2 comps): {explained_var:.2%}")
 
