@@ -38,27 +38,14 @@ def get_dataset(
         )
 
     elif name == "adult":
-        # load_adult returns pre-split train/test arrays
-        X_train_full, X_test_full, y_train_full, y_test_full = load_adult(data_dir=data_dir)
-        
-        # Combine to downsample to 5,000 samples for scaling performance
-        X_all = np.vstack([X_train_full, X_test_full])
-        y_all = np.concatenate([y_train_full, y_test_full])
-
-        n_samples = min(5000, len(X_all))
-        rng = np.random.default_rng(random_state)
-        indices = rng.choice(len(X_all), size=n_samples, replace=False)
-        X_sub = X_all[indices]
-        y_sub = y_all[indices]
-
-        X_train, X_test, y_train, y_test = train_test_split(
-            X_sub, y_sub, test_size=0.2, random_state=random_state
-        )
+        # Spec requires the full Adult Income dataset (48,842 samples).
+        # load_adult returns pre-split official train/test arrays; keep them as-is.
+        X_train, X_test, y_train, y_test = load_adult(data_dir=data_dir)
 
     elif name == "mnist":
-        # Subsample to 2,000 samples for high-dim scaling performance
+        # Spec requires >=5,000 samples for the MNIST 2-class subset.
         X, y = load_mnist_subset(
-            n_samples=2000,
+            n_samples=6000,
             classes=("3", "8"),
             random_state=random_state,
         )

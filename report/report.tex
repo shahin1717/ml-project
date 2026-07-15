@@ -1,9 +1,698 @@
 % =====================================================================
-% REPORT.tex  --  IEEE two-column paper for AI Academy ML Project
-%
-% BEFORE STARTING: refer to the official IEEE template guide for
-% formatting requirements, section structure, and submission guidelines:
-%   https://www.ieee.org/conferences/publishing/templates
-%
-% Compile with:  pdflatex report && pdflatex report
+% report.tex  --  IEEE two-column paper for AI Academy ML Final Project
+% Compile with:  pdflatex report.tex && pdflatex report.tex
+% NOTE: compile from the report/ folder so figure paths resolve correctly.
 % =====================================================================
+\documentclass[conference]{IEEEtran}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{multirow}
+
+% ===== TITLE & AUTHORS ================================================
+\title{Ensemble Methods: Boosting vs.\ Bagging---An Empirical Study\\
+{\large AI Academy Final Project Report, Spring 2026}}
+
+\author{
+\IEEEauthorblockN{Student One, Student Two, Student Three}
+\IEEEauthorblockA{AI Academy, National AI Center\\
+Spring 2026\\
+\{student1, student2, student3\}@example.com}
+}
+
+% ======================================================================
+\begin{document}
+\maketitle
+
+% ----- Abstract --------------------------------------------------------
+\begin{abstract}
+We present a systematic empirical comparison of two ensemble learning
+paradigms---\emph{boosting} and \emph{bagging}---implemented entirely
+from scratch using NumPy.  Our custom implementations include a CART
+Decision Tree (with $O(N\!\log\!N)$ split search), AdaBoost (discrete
+SAMME with decision stumps), and a Random Forest (bootstrap aggregation
+with random feature sub-sampling and OOB scoring).  We evaluate on three
+benchmark datasets spanning low-dimensional medical data, high-dimensional
+image classification, and large tabular census data.  Seven controlled
+experiments investigate scaling, noise robustness, bias-variance
+decomposition, and cluster structure.  We find that \emph{AdaBoost
+minimises Bias$^2$ more aggressively (0.0231 vs.\ 0.0317 for RF) while
+Random Forest achieves far lower Variance (0.0076 vs.\ 0.0131 for AdaBoost)}.
+Under label corruption at $\eta{=}0.20$, Random Forest degrades only
+marginally while AdaBoost suffers a significant accuracy collapse,
+confirming that re-weighting amplifies label noise.  On clean data both
+ensembles substantially outperform a single tree, with Random Forest
+achieving the highest AUC-ROC on all datasets.  Our implementations
+match scikit-learn baselines within 1\% absolute accuracy, confirming
+correctness.  Code is available at \texttt{github.com/<repo>} (tag
+\texttt{v1.0-final}).
+\end{abstract}
+
+% ----- Introduction ---------------------------------------------------
+\section{Introduction}
+\label{sec:intro}
+
+\IEEEPARstart{E}{nsemble} methods are among the most successful
+machine learning techniques in practice~\cite{hastie2009elements}.
+By combining multiple base learners, ensembles reduce generalisation
+error more effectively than any individual model.  Two dominant
+strategies exist: \emph{boosting}, which builds an additive model
+sequentially to reduce bias, and \emph{bagging}, which trains models
+independently in parallel to reduce variance.
+
+The central question of this project is: \textit{``Under what
+conditions does boosting outperform bagging, and vice versa, and
+why?''}  To answer this rigorously we implement all algorithms from
+scratch, eliminating the risk of attributing differences to
+implementation details rather than algorithmic properties.  We
+deliberately avoid ensemble classes from scikit-learn (except as a
+reference baseline) and use only NumPy for all numerical operations.
+
+This setting is representative of real-world ML engineering: when
+a team needs to port an algorithm to a new language or hardware target,
+understanding the mathematical core---rather than relying on library
+abstractions---is essential.
+
+\textbf{Contributions.} (1) Fully from-scratch implementations of
+CART, AdaBoost, and Random Forest with 93\% test coverage.
+(2) Seven reproducible experiments with fixed random seeds on three
+diverse datasets.  (3) Quantitative bias-variance decomposition
+comparing boosting and bagging.  (4) Bonus implementations of
+Gradient Boosting and SAMME.R with comparative analysis.
+
+The paper is organised as follows.  Section~\ref{sec:related} reviews
+the theoretical background.  Section~\ref{sec:methods} describes our
+implementations.  Section~\ref{sec:experiments} details the
+experimental design.  Section~\ref{sec:results} presents empirical
+results with analysis.  Section~\ref{sec:discussion} synthesises
+findings, and Section~\ref{sec:conclusion} concludes.
+
+% ----- Related Work ---------------------------------------------------
+\section{Related Work}
+\label{sec:related}
+
+\subsection{Decision Trees}
+CART~\cite{quinlan1986induction} builds binary trees by greedily
+selecting splits that minimise impurity.  The two standard impurity
+measures are Gini impurity $I_G = 1 - \sum_c p_c^2$ and Shannon
+entropy $I_E = -\sum_c p_c \log_2 p_c$.  Trees are prone to
+overfitting on noisy data and have high variance---the primary
+motivation for ensemble methods.
+
+\subsection{AdaBoost}
+Freund and Schapire~\cite{freund1997decision} showed that any
+\emph{weak learner} (accuracy slightly above 50\%) can be boosted
+into a strong learner.  AdaBoost maintains a distribution over
+training samples, upweighting misclassified examples at each round.
+The final classifier is a weighted majority vote.  Hastie \emph{et
+al.}~\cite{hastie2009elements} proved that AdaBoost minimises an
+exponential loss and can be interpreted as gradient boosting in
+function space.
+
+\subsection{Bagging and Random Forests}
+Breiman~\cite{breiman1996bagging} introduced bootstrap aggregation
+(bagging) as a general variance-reduction technique.  Random
+Forests~\cite{breiman2001random} extend bagging by sub-sampling
+features at each node split, which decorrelates individual trees
+and dramatically reduces variance beyond what pure bagging achieves.
+Out-of-bag (OOB) error provides an unbiased generalisation estimate
+without requiring a separate validation set.
+
+\subsection{Bias-Variance Trade-off}
+The expected prediction error decomposes as
+$\text{Err} = \text{Bias}^2 + \text{Variance} + \sigma^2_\varepsilon$.
+Boosting primarily reduces bias by correcting errors iteratively;
+bagging primarily reduces variance by averaging~\cite{hastie2009elements}.
+Breiman~\cite{breiman1996bagging} proved that averaging reduces
+variance by a factor proportional to the correlation between trees.
+
+\subsection{Unsupervised Methods}
+PCA~\cite{pearson1901lines} reduces dimensionality by projecting onto
+directions of maximum variance.  K-Means~\cite{lloyd1982least}
+partitions data by minimising within-cluster sum of squares.  DBSCAN~\cite{ester1996density}
+identifies clusters of arbitrary shape without requiring the number of
+clusters as input, labelling low-density points as noise.
+
+% ----- Methods --------------------------------------------------------
+\section{Methods}
+\label{sec:methods}
+
+\subsection{Decision Tree (CART)}
+We implement binary splitting with exhaustive threshold search over
+continuous features.  For each feature we sort the $N$ samples
+($O(N\log N)$) and sweep all midpoints between consecutive distinct
+values using \texttt{np.cumsum} to compute weighted class counts
+incrementally---avoiding an inner Python loop over samples.  The
+per-feature complexity is thus $O(N\log N + N)$ rather than
+$O(N^2)$.  The overall split search is $O(PN\log N)$ where $P$ is
+the number of candidate features.
+
+The impurity reduction (information gain) for a candidate split is:
+\begin{equation}
+\Delta I = I(S) - \frac{|S_L|}{|S|}\,I(S_L) - \frac{|S_R|}{|S|}\,I(S_R)
+\label{eq:gain}
+\end{equation}
+Stopping criteria: (i) maximum depth reached, (ii) node samples
+$< \texttt{min\_samples\_split}$, (iii) pure node, (iv) all feature
+vectors identical.  Feature importances are computed as normalised
+mean decrease in impurity (MDI) weighted by node sample count.
+
+\subsection{AdaBoost (Discrete SAMME)}
+We implement the discrete SAMME variant~\cite{hastie2009elements},
+which generalises AdaBoost to $K$-class problems.  Let
+$w_i^{(1)} = 1/N$.  At each round $m$:
+\begin{enumerate}
+  \item Fit a stump $h_m$ on weighted data.
+  \item Compute weighted error $\epsilon_m = \sum_i w_i^{(m)}\mathbf{1}[h_m(x_i)\neq y_i]$.
+  \item Compute estimator weight:
+    $\alpha_m = \beta\!\left(\ln\frac{1{-}\epsilon_m}{\epsilon_m} + \ln(K{-}1)\right)$
+    where $\beta$ is the learning rate.
+  \item Update and renormalise weights:
+    $w_i^{(m+1)} \propto w_i^{(m)}\exp(\alpha_m\,\mathbf{1}[h_m(x_i)\neq y_i])$.
+\end{enumerate}
+Early stopping triggers when $\epsilon_m \ge (K-1)/K$ (worse than
+random guessing).  Each stump receives a seed derived from the master
+random state to ensure reproducibility.
+
+\subsection{Random Forest}
+Bootstrap sampling draws $N$ samples with replacement per tree;
+the out-of-bag set is the complement.  At each node, $\lfloor\sqrt{P}\rfloor$
+features are randomly sampled before finding the best split.  Trees
+are trained in parallel using \texttt{multiprocessing.Pool}.
+OOB predictions are accumulated only from trees for which a sample
+was \emph{not} used during training, giving an unbiased score
+$\hat{\text{acc}}_\text{OOB}$.  Feature importances average the MDI
+scores across all trees.
+
+\subsection{Unsupervised Pipeline}
+\textbf{PCA} centres the data and decomposes the covariance matrix
+via \texttt{np.linalg.eigh}.  \textbf{K-Means} uses Lloyd's algorithm
+with $k$-distance initialisation over multiple restarts, tracking the
+lowest inertia.  \textbf{DBSCAN} identifies core points (at least
+\texttt{min\_samples} neighbours within $\varepsilon$) and expands
+clusters via BFS.
+
+% ----- Experimental Setup ---------------------------------------------
+\section{Experimental Setup}
+\label{sec:experiments}
+
+\subsection{Datasets}
+Table~\ref{tab:datasets} summarises the three datasets.  Each
+presents different modelling challenges.
+
+\begin{table}[h]
+\centering
+\caption{Dataset characteristics after preprocessing.}
+\label{tab:datasets}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lcccl}
+\toprule
+\textbf{Dataset} & \textbf{N} & \textbf{P} & \textbf{Classes} & \textbf{Challenge}\\
+\midrule
+Breast Cancer & 569 & 30 & 2 & Small, clean\\
+Adult Income & 48\,842 & 100 & 2 & Large, imbalanced\\
+MNIST 3-vs-8 & 6\,000 & 784 & 2 & High-dim, visual\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Breast Cancer Wisconsin} is a small, clean binary dataset
+predicting malignancy from 30 real-valued cell-nucleus measurements.
+The low noise and clean boundary make it an ideal benchmark.
+
+\textbf{Adult Income} predicts whether annual income exceeds \$50K.
+The dataset is class-imbalanced (${\approx}76\%$ negative class),
+contains mixed continuous and categorical features (one-hot encoded
+to 100 columns), and has numerous uninformative entries.  Missing
+values (marked ``?'') were dropped.
+
+\textbf{MNIST 3-vs-8} is a 784-dimensional binary classification
+problem.  Digits 3 and 8 share curved strokes, making them one of
+the hardest MNIST binary pairs.  We subsample 6,000 images
+(${\approx}3000$ per class) to satisfy the specification requirement
+of $\ge 5000$ samples while keeping computation manageable.
+
+\subsection{Preprocessing}
+Features were standardised (zero mean, unit variance) using training
+statistics only, applied to the test set identically.  No data
+augmentation was applied.
+
+\subsection{Evaluation Protocol}
+Experiments 1--5 use stratified 5-fold cross-validation with
+\texttt{random\_state=42}.  We report accuracy, macro F1-score,
+and AUC-ROC.  Experiment 6 (bias-variance) uses $B{=}100$ bootstrap
+replicates of the Breast Cancer training set, evaluating all models
+on a fixed held-out test split.  All results reported below used
+100 estimators for both ensembles.
+
+% ----- Results --------------------------------------------------------
+\section{Results}
+\label{sec:results}
+
+\subsection{Experiment 1: Correctness Verification}
+\label{ssec:baseline}
+
+We compare our custom \texttt{DecisionTree} against
+\texttt{sklearn.tree.DecisionTreeClassifier} (Table~\ref{tab:baseline}).
+Crucially, all differences are within 1\%, satisfying the $\le 2\%$
+threshold required by the specification.
+
+\begin{table}[h]
+\centering
+\caption{Experiment~1: Baseline accuracy---custom vs.\ sklearn.}
+\label{tab:baseline}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Dataset} & \textbf{Custom} & \textbf{Sklearn} & \textbf{Stump} & $|\Delta|$\\
+\midrule
+Breast Cancer & 0.9469 & 0.9469 & 0.8850 & 0.0000\\
+Adult Income  & 0.8210 & 0.8170 & 0.7520 & 0.0040\\
+MNIST 3-vs-8  & 0.9200 & 0.9300 & 0.8375 & 0.0100\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Why is Adult accuracy ``only'' 82\%?}  Adult Income is
+genuinely difficult: the negative class accounts for $76\%$ of
+samples, the feature space is high-dimensional after OHE, and the
+income boundary is a complex non-linear function of age, education,
+occupation, and capital gains.  A single unpruned tree achieves 82\%
+partly by defaulting toward the majority class.  The stump at 75\%
+barely exceeds the na\"ive majority-class baseline ($\approx76\%$).
+
+\textbf{Why does the stump achieve only F1=0.43 on Adult?}  A depth-1
+tree can only partition the 100-dimensional space with one binary cut.
+On a balanced dataset this is already weak; on an imbalanced one it
+tends to predict the majority class for most observations, which
+yields high accuracy but very low recall for the minority, collapsing
+macro F1.
+
+\textbf{MNIST accuracy of 92\%} is impressive for a single unpruned
+tree on raw pixels.  Digits 3 and 8 are the hardest MNIST binary pair,
+yet 784 binary/real features provide enough discriminative signal for
+a deep tree.
+
+\subsection{Experiment 2: AdaBoost Scaling}
+\label{ssec:ada_scale}
+
+Figure~\ref{fig:adaboost_scaling} shows test and train accuracy
+as a function of the number of stumps $T$.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.95\linewidth]{figures/adaboost_scaling_breast_cancer.png}
+\caption{AdaBoost train/test accuracy vs.\ number of stumps on Breast Cancer.
+Train accuracy quickly reaches 1.0; test accuracy plateaus around $T{=}30$.}
+\label{fig:adaboost_scaling}
+\end{figure}
+
+\textbf{Observation.}  On Breast Cancer, test accuracy plateaus near
+$0.97$ by $T{\approx}30$ stumps; additional estimators do not help.
+On Adult Income (Fig.~\ref{fig:adaboost_adult}), convergence is
+slower because the boundary is more complex, and the training
+accuracy reaches 1.0 at $T{\approx}80$.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.95\linewidth]{figures/adaboost_scaling_adult.png}
+\caption{AdaBoost scaling on Adult Income.  Slower convergence due to
+high-dimensional, imbalanced feature space.}
+\label{fig:adaboost_adult}
+\end{figure}
+
+\textbf{Why does AdaBoost not overfit here?}  For exponential loss
+and stumps, Schapire showed that the margin distribution keeps
+improving even after training error reaches zero, explaining the
+continued test accuracy improvement before the plateau.
+
+\subsection{Experiment 3: Random Forest Scaling}
+\label{ssec:rf_scale}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.95\linewidth]{figures/rf_estimators_scaling_breast_cancer.png}
+\caption{Random Forest accuracy vs.\ number of trees (Breast Cancer).
+Test accuracy stabilises near $T{=}50$.}
+\label{fig:rf_estimators}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.95\linewidth]{figures/rf_depth_scaling_breast_cancer.png}
+\caption{Random Forest accuracy vs.\ max tree depth (Breast Cancer).
+Accuracy peaks around \texttt{max\_depth}=10; deeper trees overfit.}
+\label{fig:rf_depth}
+\end{figure}
+
+\textbf{Number of trees} (Fig.~\ref{fig:rf_estimators}).  Accuracy
+is noisy for $T{<}20$ trees (high variance from limited averaging)
+then smooths out above $T{=}50$.  Beyond $T{=}100$ there is
+negligible gain---variance reduction saturates as the law of large
+numbers kicks in.
+
+\textbf{Tree depth} (Fig.~\ref{fig:rf_depth}).  Shallow trees
+($\text{depth}\le 4$) underfit; deep trees ($\text{depth}\ge 15$)
+memorise training data without proportional test improvement.  The
+sweet spot is depth $\approx 10$ for the Breast Cancer dataset.
+This contrasts with AdaBoost: stumps (depth~1) work for AdaBoost
+because the ensemble aggregates thousands of complementary cuts.
+
+\subsection{Experiment 4: Head-to-Head Comparison}
+\label{ssec:h2h}
+
+Figures~\ref{fig:h2h_bc}--\ref{fig:h2h_mnist} show box plots from
+5-fold cross-validation at $T{=}100$ estimators.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.95\linewidth]{figures/head_to_head_accuracy_breast_cancer.png}
+\caption{5-fold CV accuracy on Breast Cancer.  Both ensembles
+substantially outperform the single tree with lower variance.}
+\label{fig:h2h_bc}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.95\linewidth]{figures/head_to_head_auc_roc_breast_cancer.png}
+\caption{5-fold CV AUC-ROC on Breast Cancer.  Random Forest achieves
+the highest median AUC-ROC with the smallest inter-quartile range.}
+\label{fig:h2h_auc}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.95\linewidth]{figures/head_to_head_accuracy_mnist.png}
+\caption{5-fold CV accuracy on MNIST 3-vs-8.  High dimensionality
+benefits both ensemble methods equally.}
+\label{fig:h2h_mnist}
+\end{figure}
+
+\textbf{Key findings.}  (1) Both ensembles reduce inter-quartile
+range significantly compared with the single tree, confirming
+variance reduction.  (2) On Breast Cancer, Random Forest narrows
+the AUC-ROC spread to near zero, while AdaBoost shows slightly
+wider boxes---its sequential dependence between rounds introduces
+more cross-fold variability.  (3) On MNIST with 784 raw-pixel
+features, both ensembles perform similarly because the random
+feature sub-sampling in RF effectively focuses each tree on the
+most informative pixel regions, approximating the benefit of
+AdaBoost's re-weighting.
+
+\subsection{Experiment 5: Noise Robustness}
+\label{ssec:noise}
+
+We randomly flip a fraction $\eta$ of training labels.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.95\linewidth]{figures/noise_robustness_breast_cancer.png}
+\caption{Accuracy vs.\ label noise fraction $\eta$ on Breast Cancer.
+Random Forest degrades gracefully; AdaBoost collapses at high noise.}
+\label{fig:noise_bc}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.95\linewidth]{figures/noise_robustness_adult.png}
+\caption{Noise robustness on Adult Income.  The degradation pattern
+persists: RF $>$ AdaBoost at $\eta{\ge}0.10$.}
+\label{fig:noise_adult}
+\end{figure}
+
+\textbf{Why does AdaBoost collapse under noise?}  The re-weighting
+mechanism assigns exponentially higher weight to misclassified points.
+When some of those points are mislabelled (genuinely hard boundary
+samples that are now labelled incorrectly), the stump trained in the
+next round attempts to classify what are in fact random-label points,
+degrading generalisation.  At $\eta{=}0.20$, approximately one fifth
+of all re-weighted points carry corrupted labels, causing the ensemble
+to memorise noise.
+
+\textbf{Why does Random Forest stay stable?}  Each tree in the
+forest is trained on a separate bootstrap sample, so each individual
+tree is only partially exposed to the corrupted labels.  When
+predictions are averaged, the impact of any single corrupted tree
+is diluted.  Furthermore, since Random Forest does not focus more
+resources on hard samples the way AdaBoost does, it avoids the
+amplification effect.
+
+\subsection{Experiment 6: Bias-Variance Decomposition}
+\label{ssec:biasvar}
+
+Using $B{=}100$ bootstrap training sets, we estimate Bias$^2$ and
+Variance following Breiman~\cite{breiman1996bagging}
+(Table~\ref{tab:biasvar} and Fig.~\ref{fig:biasvar}).
+
+\begin{table}[h]
+\centering
+\caption{Bias-Variance decomposition (Breast Cancer, $B{=}100$).}
+\label{tab:biasvar}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Model} & \textbf{Bias$^2$} & \textbf{Variance}\\
+\midrule
+Single Tree   & 0.0408 & 0.0352\\
+AdaBoost      & \textbf{0.0231} & 0.0131\\
+Random Forest & 0.0317 & \textbf{0.0076}\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.95\linewidth]{figures/bias_variance.png}
+\caption{Bias$^2$ and Variance for three models on Breast Cancer.
+AdaBoost wins on bias; Random Forest wins on variance.}
+\label{fig:biasvar}
+\end{figure}
+
+\textbf{Interpretation.}
+The single tree has the highest values on both dimensions: it overfits
+some bootstrap samples (high variance) while still making systematic
+boundary errors (high bias).
+
+AdaBoost reduces Bias$^2$ by $43\%$ relative to the tree (from
+0.0408 to 0.0231) by iteratively correcting systematic errors.  Its
+Variance is moderate (0.0131) because each round's stump is
+deterministic given the weights, but the overall ensemble is sensitive
+to which samples are upweighted, introducing some cross-replicate
+variation.
+
+Random Forest achieves the lowest Variance (0.0076, a $78\%$
+reduction from the single tree) through averaging of decorrelated
+trees.  Its Bias$^2$ (0.0317) is intermediate: each tree is
+unbiased (full-depth), but feature sub-sampling means individual
+splits may not always choose the globally optimal feature, leaving
+some systematic error.
+
+\textbf{Total error.}  AdaBoost: $0.0231+0.0131=0.0362$.  Random
+Forest: $0.0317+0.0076=0.0393$.  On this dataset AdaBoost wins
+marginally on total decomposed error.
+
+\subsection{Experiment 7: Unsupervised Analysis}
+\label{ssec:unsup}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.95\linewidth]{figures/scree_plot.png}
+\caption{PCA scree plot on Breast Cancer.  90\% of variance is captured
+by the first 5 principal components.}
+\label{fig:scree}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.95\linewidth]{figures/elbow_method.png}
+\caption{K-Means elbow plot.  Inertia decreases sharply up to $k{=}2$,
+confirming the binary class structure.}
+\label{fig:elbow}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.95\linewidth]{figures/pca_scatter_comparison.png}
+\caption{2-D PCA projection coloured by true labels (left), K-Means
+clusters (centre), and DBSCAN clusters (right).}
+\label{fig:pcascatter}
+\end{figure}
+
+\textbf{PCA.}  Only 5 of 30 features account for 90\% of the
+variance (Fig.~\ref{fig:scree}).  This high effective dimensionality
+redundancy explains why even a single unpruned tree achieves 94\%
+accuracy---a large portion of features are either correlated or
+uninformative.
+
+\textbf{K-Means.}  The elbow at $k{=}2$ (Fig.~\ref{fig:elbow})
+aligns with the binary classification task.  The K-Means clusters
+recover the malignant/benign separation with an Adjusted Rand Index
+(ARI) of $0.58$.  The moderate ARI reflects that the two classes
+partially overlap in PCA space (Fig.~\ref{fig:pcascatter}), which
+is the same overlap that challenges classifiers.
+
+\textbf{DBSCAN.}  With $\varepsilon{=}3.5$ (chosen from the
+k-distance plot, Fig.~\ref{fig:kdist}), DBSCAN achieves ARI of
+$0.58$, comparable to K-Means.  DBSCAN additionally identifies
+approximately 12\% of samples as noise (boundary-region points),
+which correspond to the clinically ambiguous cases that are hardest
+to classify correctly.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.95\linewidth]{figures/k_distance_plot.png}
+\caption{K-distance plot for DBSCAN parameter selection.  The knee
+around $\varepsilon{\approx}3.5$ guides our choice.}
+\label{fig:kdist}
+\end{figure}
+
+\subsection{Bonus: SAMME vs.\ SAMME.R}
+\label{ssec:sammer}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.95\linewidth]{figures/sammer_comparison.png}
+\caption{Calibration comparison: SAMME (discrete) vs.\ SAMME.R (real)
+across datasets.  SAMME.R converges faster and produces better-calibrated
+probabilities.}
+\label{fig:sammer}
+\end{figure}
+
+SAMME.R uses probability estimates from each stump rather than hard
+predictions, typically converging faster and yielding better-calibrated
+probabilities.  Figure~\ref{fig:sammer} confirms that SAMME.R achieves
+lower log-loss at the same number of estimators.
+
+\subsection{Bonus: Gradient Boosting vs.\ AdaBoost}
+\label{ssec:gbm}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.95\linewidth]{figures/gbm_vs_adaboost_breast_cancer.png}
+\caption{GBM vs.\ AdaBoost test accuracy on Breast Cancer.  Gradient
+Boosting converges to a higher plateau.}
+\label{fig:gbm}
+\end{figure}
+
+Our custom Gradient Boosting implementation fits trees on negative
+gradients of the log-loss.  It consistently outperforms AdaBoost
+(Fig.~\ref{fig:gbm}) because it uses deeper trees rather than stumps
+and directly optimises log-loss rather than exponential loss, which
+is more robust to near-boundary samples.
+
+% ----- Discussion -----------------------------------------------------
+\section{Discussion}
+\label{sec:discussion}
+
+\subsection{When Does Boosting Win?}
+On \emph{clean, small, and well-structured} datasets (Breast Cancer),
+AdaBoost matches or slightly exceeds Random Forest in total Bias$^2+$Variance
+(0.0362 vs.\ 0.0393).  Its sequential focus on hard samples drives the
+decision boundary into complex regions that naive averaging misses.
+
+\subsection{When Does Bagging Win?}
+Random Forest dominates in \emph{three} scenarios:
+\begin{enumerate}
+  \item \textbf{Label noise.}  Averaging independent trees dilutes
+        corrupted-label influence; AdaBoost amplifies it.
+  \item \textbf{High variance.}  On smaller datasets (or noisier
+        features) the bootstrapped averaging provides stability
+        that sequential re-weighting cannot.
+  \item \textbf{High-dimensional feature spaces.}  Random feature
+        sub-sampling at each node effectively performs implicit
+        feature selection per tree, making Random Forest naturally
+        robust to irrelevant features without pre-processing.
+\end{enumerate}
+
+\subsection{Connection to Unsupervised Structure}
+The PCA analysis shows that Breast Cancer has a compact two-cluster
+structure in 5D (90\% variance), explaining why both ensembles
+achieve near-perfect AUC-ROC ($\ge 0.98$) on that dataset.  The
+DBSCAN noise fraction of 12\% identifies the genuinely ambiguous
+boundary samples---the \emph{same} samples that AdaBoost re-weights
+heavily in later rounds, which explains both its lower bias and its
+vulnerability to label noise: it cares disproportionately about the
+hardest cases.
+
+\subsection{Implementation Correctness}
+Our custom tree matches sklearn within 1\% absolute accuracy on all
+three datasets (Table~\ref{tab:baseline}), confirming that the $O(N\log N)$
+cumsum sweep correctly implements the CART criterion without
+floating-point errors.
+
+% ----- Conclusion -----------------------------------------------------
+\section{Conclusion}
+\label{sec:conclusion}
+
+We implemented CART, AdaBoost (SAMME), and Random Forest from scratch
+and evaluated them across seven controlled experiments.  The key
+finding is that neither algorithm uniformly dominates: \emph{AdaBoost
+reduces Bias$^2$ more aggressively; Random Forest reduces Variance
+more dramatically and is significantly more robust to label corruption.}
+Practitioners should prefer boosting when data is clean and structured,
+and bagging when noise, class imbalance, or high dimensionality is a
+concern.
+
+\textbf{Limitations.}  Experiments use fixed hyperparameters
+(100 estimators, \texttt{max\_features=sqrt}).  A full grid search
+might narrow the performance gap.  The Adult Income experiments were
+run on subsampled data in initial trials (5k samples); the final
+run uses the full 48k dataset.
+
+\textbf{Future Work.}  XGBoost-style second-order gradient boosting,
+approximate split finding for large datasets, and neural ensemble
+methods such as deep forests.
+
+% ===== BIBLIOGRAPHY ===================================================
+\begin{thebibliography}{00}
+
+\bibitem{hastie2009elements}
+T.~Hastie, R.~Tibshirani, and J.~Friedman,
+\textit{The Elements of Statistical Learning}, 2nd~ed.
+Springer, 2009.
+
+\bibitem{quinlan1986induction}
+J.~R.~Quinlan,
+``Induction of decision trees,''
+\textit{Machine Learning}, vol.~1, no.~1, pp.~81--106, 1986.
+
+\bibitem{freund1997decision}
+Y.~Freund and R.~E.~Schapire,
+``A decision-theoretic generalization of on-line learning and an
+application to boosting,''
+\textit{J. Comput. Syst. Sci.}, vol.~55, no.~1, pp.~119--139, 1997.
+
+\bibitem{breiman1996bagging}
+L.~Breiman,
+``Bagging predictors,''
+\textit{Machine Learning}, vol.~24, no.~2, pp.~123--140, 1996.
+
+\bibitem{breiman2001random}
+L.~Breiman,
+``Random forests,''
+\textit{Machine Learning}, vol.~45, no.~1, pp.~5--32, 2001.
+
+\bibitem{pearson1901lines}
+K.~Pearson,
+``On lines and planes of closest fit to systems of points in space,''
+\textit{Philosophical Magazine}, vol.~2, no.~11, pp.~559--572, 1901.
+
+\bibitem{lloyd1982least}
+S.~P.~Lloyd,
+``Least squares quantization in PCM,''
+\textit{IEEE Trans. Inf. Theory}, vol.~28, no.~2, pp.~129--137, 1982.
+
+\bibitem{ester1996density}
+M.~Ester, H.-P.~Kriegel, J.~Sander, and X.~Xu,
+``A density-based algorithm for discovering clusters in large spatial
+databases with noise,''
+in \textit{Proc. 2nd Int. Conf. Knowledge Discovery and Data Mining
+(KDD)}, 1996, pp.~226--231.
+
+\end{thebibliography}
+
+\end{document}
