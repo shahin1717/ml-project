@@ -85,9 +85,8 @@ def plot_results(results):
 
     import os
     os.makedirs("figures", exist_ok=True)
-    plt.savefig("figures/bias_variance.png", dpi=150, bbox_inches="tight")
+    plt.savefig("figures/bias_variance.png", dpi=300)
     plt.close()
-    print("Saved figures/bias_variance.png")
 
 
 def run_experiment_6():
