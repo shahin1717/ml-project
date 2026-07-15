@@ -1,8 +1,8 @@
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.model_selection import KFold
-from sklearn.metrics import roc_auc_score
+from sklearn.model_selection import KFold  # type: ignore
+from sklearn.metrics import roc_auc_score  # type: ignore
 from experiments.utils import get_dataset
 from src.metrics.evaluation import accuracy_score, precision_recall_f1
 from src.boosting.adaboost import AdaBoostClassifier

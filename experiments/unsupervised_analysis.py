@@ -1,7 +1,7 @@
 # Experiment 7: Unsupervised analysis (PCA, K-Means, DBSCAN) – placeholder stub
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.metrics import adjusted_rand_score
+from sklearn.metrics import adjusted_rand_score  # type: ignore
 
 from src.utils.preprocessing import load_breast_cancer, standardize
 from src.unsupervised.pca import PCA

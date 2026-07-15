@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.datasets import load_iris
+from sklearn.datasets import load_iris  # type: ignore
 from experiments.utils import standardize
 from src.utils.preprocessing import train_test_split
 from src.boosting.adaboost import AdaBoostClassifier
