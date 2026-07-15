@@ -1,5 +1,4 @@
 import numpy as np
-import pytest
 from src.boosting.gradient_boosting import GradientBoostingClassifier
 
 
