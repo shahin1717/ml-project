@@ -1,34 +1,34 @@
 """
-PCA vs t-SNE comparison on the sklearn digits dataset (8x8 handwritten digits, 64-dim -> 2D).
+PCA vs t-SNE comparison on the MNIST dataset (2-class subset, 784-dim -> 2D).
 
 Run:
-    python pca_vs_tsne.py
+    PYTHONPATH=. python src/unsupervised/tsne_comparison.py
 Outputs:
-    pca_vs_tsne.png  -- side-by-side scatter plots
+    figures/pca_vs_tsne.png  -- side-by-side scatter plots
 """
 
+import os
 import time
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.datasets import load_digits
-from sklearn.decomposition import PCA
+from src.unsupervised.pca import PCA
 from sklearn.manifold import TSNE
-from sklearn.preprocessing import StandardScaler
+from src.utils.preprocessing import load_mnist_subset, standardize
 
 # ---------------------------------------------------------------
 # 1. Load data
 # ---------------------------------------------------------------
-digits = load_digits()
-X, y = digits.data, digits.target  # X: (1797, 64), y: (1797,) labels 0-9
+# Load 2-class MNIST subset
+X, y = load_mnist_subset(n_samples=2000, classes=("3", "8"), random_state=42)
 
-# Standardize features ;
-X_scaled = StandardScaler().fit_transform(X)
+# Standardize features
+X_scaled, _ = standardize(X, X)
 
 # ---------------------------------------------------------------
 # 2. PCA: linear, deterministic, fast, preserves global variance
 # ---------------------------------------------------------------
 t0 = time.time()
-pca = PCA(n_components=2, random_state=42)
+pca = PCA(n_components=2)
 X_pca = pca.fit_transform(X_scaled)
 t_pca = time.time() - t0
 
@@ -62,11 +62,12 @@ for ax, X_2d, title in zip(
     [X_pca, X_tsne],
     [f"PCA (explains {explained_var:.1%} variance)", "t-SNE (perplexity=30)"],
 ):
-    scatter = ax.scatter(X_2d[:, 0], X_2d[:, 1], c=y, cmap="tab10", s=15, alpha=0.8)
+    scatter = ax.scatter(X_2d[:, 0], X_2d[:, 1], c=y, cmap="coolwarm", s=15, alpha=0.8)
     ax.set_title(title)
     ax.set_xlabel("Component 1")
     ax.set_ylabel("Component 2")
 
-fig.colorbar(scatter, ax=axes, label="Digit class", ticks=range(10))
-plt.savefig("pca_vs_tsne.png", dpi=150, bbox_inches="tight")
-print("Saved pca_vs_tsne.png")
+fig.colorbar(scatter, ax=axes, label="Digit class (0=3, 1=8)", ticks=[0, 1])
+os.makedirs("figures", exist_ok=True)
+plt.savefig("figures/pca_vs_tsne.png", dpi=150, bbox_inches="tight")
+print("Saved figures/pca_vs_tsne.png")
