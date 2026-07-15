@@ -2,6 +2,8 @@ from __future__ import annotations
 import argparse
 import os
 import sys
+import matplotlib
+matplotlib.use('Agg')
 
 # Ensure project root is in the Python search path to import from the root-level experiments directory
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))

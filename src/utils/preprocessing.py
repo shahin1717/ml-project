@@ -63,8 +63,8 @@ def load_adult(data_dir: str = "data") -> tuple[np.ndarray, np.ndarray, np.ndarr
     ]
 
     # Clean rows containing "?" missing value string
-    df_train = pd.read_csv(train_path, names=columns, na_values=" ?", sep=",", skipinitialspace=True)
-    df_test = pd.read_csv(test_path, names=columns, na_values=" ?", sep=",", skipinitialspace=True, skiprows=1)
+    df_train = pd.read_csv(train_path, names=columns, na_values="?", sep=",", skipinitialspace=True)
+    df_test = pd.read_csv(test_path, names=columns, na_values="?", sep=",", skipinitialspace=True, skiprows=1)
 
     df_train = df_train.dropna()
     df_test = df_test.dropna()

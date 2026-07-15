@@ -19,7 +19,7 @@
 {\large AI Academy Final Project Report, Spring 2026}}
 
 \author{
-\IEEEauthorblockN{Student One, Student Two, Student Three}
+\IEEEauthorblockN{Shahin Alakparov, Narmina Ibragimova, Hasan Mammadov}
 \IEEEauthorblockA{AI Academy, National AI Center\\
 Spring 2026\\
 \{student1, student2, student3\}@example.com}
@@ -43,13 +43,14 @@ experiments investigate scaling, noise robustness, bias-variance
 decomposition, and cluster structure.  We find that \emph{AdaBoost
 minimises Bias$^2$ more aggressively (0.0231 vs.\ 0.0317 for RF) while
 Random Forest achieves far lower Variance (0.0076 vs.\ 0.0131 for AdaBoost)}.
-Under label corruption at $\eta{=}0.20$, Random Forest degrades only
+Under label corruption at $\eta{=}0.20$ on Breast Cancer, Random Forest degrades only
 marginally while AdaBoost suffers a significant accuracy collapse,
-confirming that re-weighting amplifies label noise.  On clean data both
+confirming that re-weighting amplifies label noise on clean boundaries.  On clean data both
 ensembles substantially outperform a single tree, with Random Forest
-achieving the highest AUC-ROC on all datasets.  Our implementations
+achieving the highest AUC-ROC on Breast Cancer (where all figures are
+reported).  Our implementations
 match scikit-learn baselines within 1\% absolute accuracy, confirming
-correctness.  Code is available at \texttt{github.com/<repo>} (tag
+correctness.  Code is available at \texttt{https://github.com/shahin1717/ml-project} (tag
 \texttt{v1.0-final}).
 \end{abstract}
 
@@ -215,7 +216,7 @@ presents different modelling challenges.
 \textbf{Dataset} & \textbf{N} & \textbf{P} & \textbf{Classes} & \textbf{Challenge}\\
 \midrule
 Breast Cancer & 569 & 30 & 2 & Small, clean\\
-Adult Income & 48\,842 & 100 & 2 & Large, imbalanced\\
+Adult Income & 45\,222 & 100 & 2 & Large, imbalanced\\
 MNIST 3-vs-8 & 6\,000 & 784 & 2 & High-dim, visual\\
 \bottomrule
 \end{tabular}
@@ -228,8 +229,10 @@ The low noise and clean boundary make it an ideal benchmark.
 \textbf{Adult Income} predicts whether annual income exceeds \$50K.
 The dataset is class-imbalanced (${\approx}76\%$ negative class),
 contains mixed continuous and categorical features (one-hot encoded
-to 100 columns), and has numerous uninformative entries.  Missing
-values (marked ``?'') were dropped.
+to 100 columns after one-hot expansion of 8 categorical variables),
+and is class-imbalanced.  Rows with missing values (marked \texttt{?})
+were discarded via \texttt{dropna}, reducing the dataset size from 48,842 to
+45,222 cleaned examples.
 
 \textbf{MNIST 3-vs-8} is a 784-dimensional binary classification
 problem.  Digits 3 and 8 share curved strokes, making them one of
@@ -243,9 +246,14 @@ statistics only, applied to the test set identically.  No data
 augmentation was applied.
 
 \subsection{Evaluation Protocol}
-Experiments 1--5 use stratified 5-fold cross-validation with
-\texttt{random\_state=42}.  We report accuracy, macro F1-score,
-and AUC-ROC.  Experiment 6 (bias-variance) uses $B{=}100$ bootstrap
+Experiment~1 (correctness) uses a single fixed 80/20 train-test split.
+Experiments~2--3 (scaling curves) use a single fixed split to enable
+staged ensemble predictions across estimator counts.  Experiment~4
+(head-to-head) uses stratified 5-fold cross-validation with
+\texttt{random\_state=42}.  Experiment~5 (noise robustness) uses a
+single fixed split, varying only the label corruption fraction.
+We report accuracy, macro F1-score,
+and AUC-ROC.  Experiment~6 (bias-variance) uses $B{=}100$ bootstrap
 replicates of the Breast Cancer training set, evaluating all models
 on a fixed held-out test split.  All results reported below used
 100 estimators for both ensembles.
@@ -272,7 +280,7 @@ threshold required by the specification.
 \textbf{Dataset} & \textbf{Custom} & \textbf{Sklearn} & \textbf{Stump} & $|\Delta|$\\
 \midrule
 Breast Cancer & 0.9469 & 0.9469 & 0.8850 & 0.0000\\
-Adult Income  & 0.8119 & 0.8109 & 0.7638 & 0.0010\\
+Adult Income  & 0.8092 & 0.8105 & 0.7543 & 0.0013\\
 MNIST 3-vs-8  & 0.9292 & 0.9317 & 0.8392 & 0.0025\\
 \bottomrule
 \end{tabular}
@@ -284,8 +292,8 @@ samples, the feature space is high-dimensional after OHE (100 columns),
 and the income boundary is a complex non-linear function of age, education,
 occupation, and capital gains.  A single unpruned tree achieves 81\%
 partly by defaulting toward the majority class.  The custom tree
-matches sklearn within 0.1\% (0.8119 vs.\ 0.8109), well within the
-$\le 2\%$ threshold.  The stump at 76\%
+matches sklearn within 0.2\% (0.8092 vs.\ 0.8105), well within the
+$\le 2\%$ threshold.  The stump at 75\%
 barely exceeds the na\"ive majority-class baseline ($\approx76\%$).
 
 \textbf{Why does the stump achieve only F1=0.43 on Adult?}  A depth-1
@@ -402,8 +410,8 @@ variance reduction.  (2) On Breast Cancer, AdaBoost achieves the
 highest mean accuracy ($0.9755 \pm 0.0186$) while Random Forest
 is close behind ($0.9631 \pm 0.0203$); on AUC-ROC both reach
 $>0.98$.  (3) On Adult Income, our custom Random Forest
-($0.8657 \pm 0.0036$) marginally outperforms sklearn's RF
-($0.8553 \pm 0.0036$), demonstrating that the custom implementation
+($0.8623 \pm 0.0032$) marginally outperforms sklearn's RF
+($0.8507 \pm 0.0023$), demonstrating that the custom implementation
 is competitive.  (4) On MNIST with 784 raw-pixel
 features, Random Forest dominates with $0.9808 \pm 0.0035$ accuracy
 vs.\ AdaBoost's $0.9505 \pm 0.0032$---the random feature
@@ -426,8 +434,11 @@ Random Forest degrades gracefully; AdaBoost collapses at high noise.}
 \begin{figure}[h]
 \centering
 \includegraphics[width=0.95\linewidth]{figures/noise_robustness_adult.png}
-\caption{Noise robustness on Adult Income.  The degradation pattern
-persists: RF $>$ AdaBoost at $\eta{\ge}0.10$.}
+\caption{Noise robustness on Adult Income.  Random Forest retains
+a higher absolute accuracy at every $\eta$, but AdaBoost degrades
+\emph{less} in relative terms ($\Delta{=}0.0019$ vs.\ RF's
+$\Delta{=}0.0056$ from $\eta{=}0$ to $0.20$)---the opposite of the
+degradation-rate ordering seen on Breast Cancer.}
 \label{fig:noise_adult}
 \end{figure}
 
@@ -446,7 +457,11 @@ tree is only partially exposed to the corrupted labels.  When
 predictions are averaged, the impact of any single corrupted tree
 is diluted.  Furthermore, since Random Forest does not focus more
 resources on hard samples the way AdaBoost does, it avoids the
-amplification effect.
+amplification effect.  This amplification is most pronounced on
+Breast Cancer, where the class boundary is clean; on Adult Income,
+where the boundary is already noisy and complex, AdaBoost's
+re-weighting degrades more gracefully than on cleaner data,
+yielding a smaller accuracy drop than Random Forest at $\eta{=}0.20$.
 
 \subsection{Experiment 6: Bias-Variance Decomposition}
 \label{ssec:biasvar}
@@ -589,10 +604,14 @@ Boosting converges to a higher plateau.}
 \end{figure}
 
 Our custom Gradient Boosting implementation fits trees on negative
-gradients of the log-loss.  It consistently outperforms AdaBoost
-(Fig.~\ref{fig:gbm}) because it uses deeper trees rather than stumps
-and directly optimises log-loss rather than exponential loss, which
-is more robust to near-boundary samples.
+gradients of the log-loss.  It outperforms AdaBoost on Breast Cancer
+(Fig.~\ref{fig:gbm}), converging to a higher accuracy plateau,
+because it uses deeper trees rather than stumps and directly
+optimises log-loss rather than exponential loss, which is more
+robust to near-boundary samples.  On Adult Income the two methods
+are nearly tied (AdaBoost $0.8310 \pm 0.0124$ vs.\ GBM
+$0.8300 \pm 0.0259$), suggesting GBM's advantage is most pronounced
+on cleaner, lower-dimensional data.
 
 % ----- Discussion -----------------------------------------------------
 \section{Discussion}
@@ -653,8 +672,8 @@ concern.
 \textbf{Limitations.}  Experiments use fixed hyperparameters
 (100 estimators, \texttt{max\_features=sqrt}).  A full grid search
 might narrow the performance gap.  All experiments use the full
-datasets: Breast Cancer (569 samples), Adult Income (full
-$\approx45{,}000$ train/test split after dropping missing rows), and
+datasets: Breast Cancer (569 samples), Adult Income (full 45,222
+examples after dropping rows with missing values via \texttt{dropna}), and
 MNIST 3-vs-8 (6,000 samples, satisfying the $\ge 5000$ specification).
 
 \textbf{Future Work.}  XGBoost-style second-order gradient boosting,

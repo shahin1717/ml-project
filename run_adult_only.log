@@ -1,0 +1,165 @@
+
+=== Running Experiment 1: Baseline ===
+================================================================================
+Experiment 1: Baseline Comparison
+================================================================================
+
+Evaluating dataset: ADULT
+Classifier                | Accuracy   | Macro F1   | AUC-ROC   
+-----------------------------------------------------------------
+Custom DecisionTree       | 0.8092     | 0.7439     | 0.7452    
+Custom DecisionStump      | 0.7543     | 0.4300     | 0.7593    
+Sklearn DecisionTree      | 0.8105     | 0.7465     | 0.7485    
+Absolute Accuracy Difference (Custom vs Sklearn): 0.0013
+=> VERIFICATION PASSED: Agreement is within the 2% threshold.
+
+================================================================================
+
+
+=== Running Experiment 2: AdaBoost Scaling ===
+================================================================================
+Experiment 2: AdaBoost Scaling
+================================================================================
+
+Training AdaBoost on dataset: ADULT
+Fitted 200 estimators (early stopping may have occurred).
+Saved plot to figures/adaboost_scaling_adult.png
+
+================================================================================
+
+
+=== Running Experiment 3: Random Forest Scaling ===
+================================================================================
+Experiment 3: Random Forest Scaling
+================================================================================
+
+Evaluating Random Forest scaling on dataset: ADULT
+Part (a): Varying n_estimators (max_depth=None)...
+  n_estimators=1  : test_acc=0.8232, oob_score=0.8261
+  n_estimators=10 : test_acc=0.8538, oob_score=0.8478
+  n_estimators=20 : test_acc=0.8564, oob_score=0.8546
+  n_estimators=40 : test_acc=0.8585, oob_score=0.8579
+  n_estimators=60 : test_acc=0.8594, oob_score=0.8588
+  n_estimators=80 : test_acc=0.8592, oob_score=0.8590
+  n_estimators=100: test_acc=0.8598, oob_score=0.8591
+  n_estimators=120: test_acc=0.8591, oob_score=0.8598
+  n_estimators=140: test_acc=0.8600, oob_score=0.8606
+  n_estimators=160: test_acc=0.8591, oob_score=0.8612
+  n_estimators=180: test_acc=0.8594, oob_score=0.8612
+  n_estimators=200: test_acc=0.8604, oob_score=0.8608
+Saved plot to figures/rf_estimators_scaling_adult.png
+Part (b): Varying max_depth (n_estimators=100)...
+  max_depth=1 : test_acc=0.7543, oob_score=0.7511
+  max_depth=2 : test_acc=0.7544, oob_score=0.7535
+  max_depth=4 : test_acc=0.8183, oob_score=0.8156
+  max_depth=6 : test_acc=0.8414, oob_score=0.8400
+  max_depth=8 : test_acc=0.8478, oob_score=0.8463
+  max_depth=10: test_acc=0.8513, oob_score=0.8510
+  max_depth=12: test_acc=0.8546, oob_score=0.8555
+  max_depth=14: test_acc=0.8557, oob_score=0.8561
+  max_depth=16: test_acc=0.8570, oob_score=0.8567
+  max_depth=18: test_acc=0.8589, oob_score=0.8576
+  max_depth=20: test_acc=0.8587, oob_score=0.8586
+Saved plot to figures/rf_depth_scaling_adult.png
+
+================================================================================
+
+
+=== Running Experiment 4: Head-to-Head Comparison ===
+================================================================================
+Experiment 4: Head-to-Head Comparison (100 estimators, 5-fold CV)
+================================================================================
+
+Evaluating dataset: ADULT
+
+Model                      | Accuracy           | Macro F1           | AUC-ROC           
+------------------------------------------------------------------------------------------
+Single Tree                | 0.8121 ± 0.0038    | 0.7504 ± 0.0057    | 0.7530 ± 0.0066   
+AdaBoost                   | 0.8512 ± 0.0052    | 0.7823 ± 0.0065    | 0.9073 ± 0.0036   
+Random Forest (custom)     | 0.8623 ± 0.0032    | 0.8007 ± 0.0049    | 0.9169 ± 0.0020   
+Random Forest (sklearn)    | 0.8507 ± 0.0023    | 0.7891 ± 0.0043    | 0.9020 ± 0.0019   
+Saved box plots to figures/head_to_head_{accuracy,macro_f1,auc_roc}_adult.png
+
+================================================================================
+
+
+=== Running Experiment 5: Noise Robustness ===
+================================================================================
+Experiment 5: Noise Robustness (label flipping)
+================================================================================
+
+Evaluating dataset: ADULT
+eta      | AdaBoost acc.    | Random Forest acc.  
+--------------------------------------------------
+0.00     | 0.8499           | 0.8598              
+0.05     | 0.8485           | 0.8600              
+0.10     | 0.8483           | 0.8580              
+0.20     | 0.8481           | 0.8541              
+Saved plot to figures/noise_robustness_adult.png
+Accuracy drop (eta=0 -> eta=0.20): AdaBoost=0.0019, Random Forest=0.0056 => Random Forest degrades more on ADULT.
+
+================================================================================
+
+
+=== Running Experiment 6: Bias-Variance Decomposition ===
+=======================================================
+Bias-Variance Decomposition (B = 100)
+=======================================================
+DecisionTree    Bias² = 0.0408   Variance = 0.0352
+/home/shahin/ml-project/src/trees/decision_tree.py:230: RuntimeWarning: divide by zero encountered in divide
+  rp = rc / rw[:, None]                        # right class probs
+/home/shahin/ml-project/src/trees/decision_tree.py:230: RuntimeWarning: invalid value encountered in divide
+  rp = rc / rw[:, None]                        # right class probs
+AdaBoost        Bias² = 0.0231   Variance = 0.0131
+RandomForest    Bias² = 0.0317   Variance = 0.0076
+=======================================================
+
+=== Running Experiment 7: Unsupervised Analysis ===
+=======================================================
+1. Scree plot
+=======================================================
+Components needed for >=90% variance: 7
+=======================================================
+2. Elbow method for K-Means
+=======================================================
+K-Means (k=2) ARI: 0.6536
+=======================================================
+3. K-distance plot for DBSCAN
+=======================================================
+DBSCAN (eps=3.5) ARI: 0.0653, noise fraction: 0.1318
+=======================================================
+4. PCA scatter comparison
+=======================================================
+
+=== Running Bonus: Gradient Boosting vs AdaBoost ===
+
+Evaluating models on dataset: adult ...
+Results for adult:
+  AdaBoost  : Accuracy = 0.8310 ± 0.0124 | Macro-F1 = 0.7488 ± 0.0141 | AUC-ROC  = 0.8750 ± 0.0201
+  GBM       : Accuracy = 0.8300 ± 0.0259 | Macro-F1 = 0.7428 ± 0.0303 | AUC-ROC  = 0.8794 ± 0.0136
+Saved figure: figures/gbm_vs_adaboost_adult.png
+
+=== Running Bonus: SAMME vs SAMME.R Calibration ===
+Loading Iris dataset...
+Training SAMME and SAMME.R models with n_estimators=80...
+/home/shahin/ml-project/src/trees/decision_tree.py:230: RuntimeWarning: invalid value encountered in divide
+  rp = rc / rw[:, None]                        # right class probs
+/home/shahin/ml-project/src/trees/decision_tree.py:230: RuntimeWarning: divide by zero encountered in divide
+  rp = rc / rw[:, None]                        # right class probs
+
+==================================================
+Final Results (at 80 rounds):
+SAMME (Discrete):
+  Train Accuracy: 1.0000
+  Test Accuracy : 0.9000
+  Test Brier    : 0.2001
+  Test Log-Loss : 0.6648
+--------------------------------------------------
+SAMME.R (Real):
+  Train Accuracy: 0.9750
+  Test Accuracy : 0.9000
+  Test Brier    : 0.1223
+  Test Log-Loss : 0.1889
+==================================================
+
+Comparison plot saved successfully to figures/sammer_comparison.png

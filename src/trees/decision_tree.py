@@ -421,7 +421,7 @@ class DecisionTree:
             return make_leaf()
 
         # All feature vectors identical → no valid split exists
-        if np.unique(X, axis=0).shape[0] == 1:
+        if np.all(X == X[0]):
             return make_leaf()
 
         # --- Best split --- (pass pre-computed impurity to avoid recomputation)
