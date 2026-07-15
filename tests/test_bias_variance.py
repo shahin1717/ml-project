@@ -1,5 +1,4 @@
 import numpy as np
-import pytest
 from experiments.bias_variance import bias_variance_decomposition
 from src.trees.decision_tree import DecisionTree
 
@@ -9,7 +8,8 @@ def test_bias_variance_decomposition_smoke():
     X = np.array([[0, 0], [0, 1], [1, 0], [1, 1]], dtype=float)
     y = np.array([0, 1, 1, 0])
 
-    model_fn = lambda: DecisionTree(max_depth=2, random_state=42)
+    def model_fn():
+        return DecisionTree(max_depth=2, random_state=42)
 
     bias_sq, variance = bias_variance_decomposition(
         model_fn,

@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.metrics import adjusted_rand_score
 
-from src.utils.preprocessing import load_breast_cancer, train_test_split, standardize
+from src.utils.preprocessing import load_breast_cancer, standardize
 from src.unsupervised.pca import PCA
 from src.unsupervised.kmeans import KMeans
 from src.unsupervised.dbscan import DBSCAN
@@ -23,7 +23,7 @@ def scree_plot(X, max_components=10):
     plt.legend()
     plt.grid(True)
     plt.savefig("figures/scree_plot.png")
-    plt.show()
+    plt.close()
 
     n_for_90 = np.argmax(cumulative >= 0.9) + 1
     print(f"Components needed for >=90% variance: {n_for_90}")
@@ -48,7 +48,7 @@ def elbow_method(X, k_range=range(1, 11), n_restarts=10, random_state=42):
     plt.title("Elbow Method")
     plt.grid(True)
     plt.savefig("figures/elbow_method.png")
-    plt.show()
+    plt.close()
 
 
 def k_distance_plot(X, min_samples=5):
@@ -69,7 +69,7 @@ def k_distance_plot(X, min_samples=5):
     plt.title("K-Distance Plot (for DBSCAN eps selection)")
     plt.grid(True)
     plt.savefig("figures/k_distance_plot.png")
-    plt.show()
+    plt.close()
 
 
 def pca_scatter_comparison(X, y_true, kmeans_labels, dbscan_labels):
@@ -78,13 +78,13 @@ def pca_scatter_comparison(X, y_true, kmeans_labels, dbscan_labels):
 
     fig, axes = plt.subplots(1, 3, figsize=(18, 5))
 
-    scatter0 = axes[0].scatter(X_2d[:, 0], X_2d[:, 1], c=y_true, cmap="viridis")
+    axes[0].scatter(X_2d[:, 0], X_2d[:, 1], c=y_true, cmap="viridis")
     axes[0].set_title("True Class Labels")
 
-    scatter1 = axes[1].scatter(X_2d[:, 0], X_2d[:, 1], c=kmeans_labels, cmap="viridis")
+    axes[1].scatter(X_2d[:, 0], X_2d[:, 1], c=kmeans_labels, cmap="viridis")
     axes[1].set_title("K-Means Clusters")
 
-    scatter2 = axes[2].scatter(X_2d[:, 0], X_2d[:, 1], c=dbscan_labels, cmap="viridis")
+    axes[2].scatter(X_2d[:, 0], X_2d[:, 1], c=dbscan_labels, cmap="viridis")
     axes[2].set_title("DBSCAN Clusters")
 
     for ax in axes:
@@ -93,7 +93,7 @@ def pca_scatter_comparison(X, y_true, kmeans_labels, dbscan_labels):
 
     plt.tight_layout()
     plt.savefig("figures/pca_scatter_comparison.png")
-    plt.show()
+    plt.close()
 
 
 def run_experiment_7():
