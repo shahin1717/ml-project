@@ -1,3 +1,4 @@
+from __future__ import annotations
 import numpy as np
 
 
@@ -21,10 +22,10 @@ class PCA:
         if n_components < 1:
             raise ValueError("n_components must be a positive integer")
         self.n_components = n_components
-        self.components_ = None
-        self.explained_variance_ = None
-        self.explained_variance_ratio_ = None
-        self.mean_ = None
+        self.components_: np.ndarray | None = None
+        self.explained_variance_: np.ndarray | None = None
+        self.explained_variance_ratio_: np.ndarray | None = None
+        self.mean_: np.ndarray | None = None
 
     def fit(self, X: np.ndarray) -> "PCA":
         X = np.asarray(X, dtype=float)

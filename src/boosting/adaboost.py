@@ -150,6 +150,7 @@ class AdaBoostClassifier:
 
         # Compute raw weighted class scores
         scores = self._compute_scores(X)
+        assert self.classes_ is not None
         return self.classes_[np.argmax(scores, axis=1)]
 
     def predict_proba(self, X: np.ndarray) -> np.ndarray:
@@ -182,6 +183,7 @@ class AdaBoostClassifier:
         n_samples = X.shape[0]
         scores = np.zeros((n_samples, self.n_classes_), dtype=float)
 
+        assert self.classes_ is not None
         for stump, alpha in zip(self.estimators_, self.estimator_weights_):
             preds = stump.predict(X)
             # Accumulate weight for predicted class
@@ -220,6 +222,7 @@ class AdaBoostClassifier:
         n_samples = X.shape[0]
         scores = np.zeros((n_samples, self.n_classes_), dtype=float)
 
+        assert self.classes_ is not None
         for stump, alpha in zip(self.estimators_, self.estimator_weights_):
             preds = stump.predict(X)
             for k, c in enumerate(self.classes_):
