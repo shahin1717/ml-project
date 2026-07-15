@@ -140,7 +140,7 @@ def plot_results(results):
     plt.legend()
 
     plt.tight_layout()
-
+    plt.savefig("figures/bias_variance.png")
     plt.show()
 
 
