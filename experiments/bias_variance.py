@@ -1,58 +1,4 @@
-# # Experiment 6: Bias-variance decomposition (100 bootstrap replicates) – placeholder stub
-# import numpy as np
-# from src.utils.preprocessing import load_breast_cancer, train_test_split, standardize
-# from src.trees.decision_tree import DecisionTree
-# from src.boosting.adaboost import AdaBoostClassifier
-# from src.bagging.random_forest import RandomForestClassifier
 
-
-# def bias_variance_decomposition(model_fn, X_train, y_train, X_test, y_test, n_bootstraps=100, random_state=42):
-#     rng = np.random.default_rng(random_state)
-#     n_train = X_train.shape[0]
-#     n_test = X_test.shape[0]
-
-#     all_preds = np.zeros((n_bootstraps, n_test))
-
-#     for b in range(n_bootstraps):
-#         idx = rng.integers(0, n_train, size=n_train)
-#         X_boot, y_boot = X_train[idx], y_train[idx]
-
-#         model = model_fn()
-#         model.fit(X_boot, y_boot)
-#         all_preds[b] = model.predict(X_test)
-
-#     main_prediction = np.round(all_preds.mean(axis=0))
-
-#     bias_sq = np.mean((main_prediction - y_test) ** 2)
-#     variance = np.mean(np.var(all_preds, axis=0))
-
-#     return bias_sq, variance
-
-
-# def run_experiment_6():
-#     X, y = load_breast_cancer()
-#     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-#     X_train_s, X_test_s = standardize(X_train, X_test)
-
-#     models = {
-#         "DecisionTree": lambda: DecisionTree(max_depth=10, random_state=42),
-#         "AdaBoost": lambda: AdaBoostClassifier(n_estimators=100, random_state=42),
-#         "RandomForest": lambda: RandomForestClassifier(n_estimators=100, max_depth=10, random_state=42),
-#     }
-
-#     results = {}
-#     for name, model_fn in models.items():
-#         bias_sq, variance = bias_variance_decomposition(
-#             model_fn, X_train_s, y_train, X_test_s, y_test, n_bootstraps=100
-#         )
-#         results[name] = {"bias_sq": bias_sq, "variance": variance}
-#         print(f"{name}: bias^2={bias_sq:.4f}, variance={variance:.4f}")
-
-#     return results
-
-
-# if __name__ == "__main__":
-#     run_experiment_6()
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -90,7 +36,7 @@ def bias_variance_decomposition(
     n_train = len(X_train)
     n_test = len(X_test)
 
-    # probability of positive class
+    # predictions matrix (0 or 1)
     predictions = np.zeros((n_bootstraps, n_test))
 
     for b in range(n_bootstraps):
@@ -103,10 +49,8 @@ def bias_variance_decomposition(
         model = model_fn()
         model.fit(X_boot, y_boot)
 
-        probs = model.predict_proba(X_test)
-
-        # probability of class 1
-        predictions[b] = probs[:, 1]
+        # hard binary predictions (0 or 1)
+        predictions[b] = model.predict(X_test)
 
     mean_prediction = predictions.mean(axis=0)
 
@@ -140,7 +84,7 @@ def plot_results(results):
     plt.legend()
 
     plt.tight_layout()
-    plt.savefig("figures/bias_variance.png")
+
     plt.show()
 
 
