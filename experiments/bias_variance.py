@@ -90,7 +90,7 @@ def bias_variance_decomposition(
     n_train = len(X_train)
     n_test = len(X_test)
 
-    # probability of positive class
+    # predictions matrix (0 or 1)
     predictions = np.zeros((n_bootstraps, n_test))
 
     for b in range(n_bootstraps):
@@ -103,10 +103,8 @@ def bias_variance_decomposition(
         model = model_fn()
         model.fit(X_boot, y_boot)
 
-        probs = model.predict_proba(X_test)
-
-        # probability of class 1
-        predictions[b] = probs[:, 1]
+        # hard binary predictions (0 or 1)
+        predictions[b] = model.predict(X_test)
 
     mean_prediction = predictions.mean(axis=0)
 
@@ -141,7 +139,11 @@ def plot_results(results):
 
     plt.tight_layout()
 
-    plt.show()
+    import os
+    os.makedirs("figures", exist_ok=True)
+    plt.savefig("figures/bias_variance.png", dpi=150, bbox_inches="tight")
+    plt.close()
+    print("Saved figures/bias_variance.png")
 
 
 def run_experiment_6():
