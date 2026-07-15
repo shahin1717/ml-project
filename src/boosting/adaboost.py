@@ -23,6 +23,9 @@ class AdaBoostClassifier:
         Maximum number of estimators at which boosting is terminated.
     learning_rate : float, default=1.0
         Weight applied to each classifier at each boosting iteration.
+    algorithm : {"SAMME", "SAMME.R"}, default="SAMME"
+        The boosting algorithm to use. "SAMME" implements the discrete
+        SAMME variant, and "SAMME.R" implements the real SAMME.R variant.
     criterion : {"gini", "entropy"}, default="gini"
         The impurity criterion to use for the decision stumps.
     random_state : int or None, default=None
@@ -33,13 +36,18 @@ class AdaBoostClassifier:
         self,
         n_estimators: int = 50,
         learning_rate: float = 1.0,
+        algorithm: str = "SAMME",
         criterion: str = "gini",
         random_state: Optional[int] = None,
     ) -> None:
         self.n_estimators = n_estimators
         self.learning_rate = learning_rate
+        self.algorithm = algorithm
         self.criterion = criterion
         self.random_state = random_state
+
+        if algorithm not in ("SAMME", "SAMME.R"):
+            raise ValueError(f"algorithm must be 'SAMME' or 'SAMME.R', got {algorithm}")
 
         self.estimators_: list[DecisionStump] = []
         self.estimator_weights_: list[float] = []
@@ -74,6 +82,9 @@ class AdaBoostClassifier:
         self.classes_ = np.unique(y)
         self.n_classes_ = len(self.classes_)
 
+        if self.n_classes_ < 2:
+            raise ValueError(f"Number of classes must be greater than 1, got {self.n_classes_}.")
+
         n_samples = X.shape[0]
         w = np.ones(n_samples, dtype=float) / n_samples
 
@@ -91,44 +102,89 @@ class AdaBoostClassifier:
             )
             stump.fit(X, y, sample_weight=w)
 
-            preds = stump.predict(X)
-            incorrect = preds != y
-
-            # Compute weighted error
             w_sum = w.sum()
             if w_sum == 0:
                 # If weights sum to 0, stop boosting
                 break
-            err_m = float(w[incorrect].sum() / w_sum)
 
-            # Clip to avoid division by zero or negative log
-            if err_m == 0:
-                err_m = 1e-10
+            if self.algorithm == "SAMME.R":
+                proba = stump.predict_proba(X)
+                # Align probabilities to the global classes
+                proba = _align_proba(stump, X, self.classes_)
 
-            # Early stopping if stump is worse than random guessing.
-            # For multiclass SAMME, random guess accuracy is 1/K, so stop if err >= (K-1)/K.
-            # For binary K=2, this is 0.5.
-            random_guess_err = (self.n_classes_ - 1) / self.n_classes_
-            if err_m >= random_guess_err:
-                break
+                # Predict classes based on probabilities
+                preds = self.classes_[np.argmax(proba, axis=1)]
+                incorrect = preds != y
 
-            # SAMME weight formula: alpha = ln((1-err)/err) + ln(K-1)
-            # Scaled by learning_rate
-            alpha_m = self.learning_rate * (
-                math.log((1.0 - err_m) / err_m)
-                + math.log(self.n_classes_ - 1 if self.n_classes_ > 1 else 1.0)
-            )
+                # Compute weighted error
+                err_m = float(w[incorrect].sum() / w_sum)
 
-            # Update weights: w *= exp(alpha * I(y != y_pred))
-            # Only scale up misclassified samples
-            w *= np.exp(alpha_m * incorrect)
+                # Stop boosting if perfect fit
+                if err_m <= 0:
+                    self.estimators_.append(stump)
+                    self.estimator_weights_.append(1.0)
+                    self.estimator_errors_.append(0.0)
+                    break
 
-            # Normalize weights
-            w /= w.sum()
+                # Target coding: y_k = 1 if y == class_k else -1 / (K - 1)
+                y_codes = np.array([-1.0 / (self.n_classes_ - 1), 1.0])
+                y_coding = y_codes.take(self.classes_ == y[:, np.newaxis])
 
-            self.estimators_.append(stump)
-            self.estimator_weights_.append(alpha_m)
-            self.estimator_errors_.append(err_m)
+                # Clip probabilities to avoid log of 0
+                np.clip(proba, 1e-15, None, out=proba)
+
+                # Update weights using multiclass AdaBoost SAMME.R formula
+                factor = (self.n_classes_ - 1.0) / self.n_classes_
+                estimator_weight = (
+                    -1.0
+                    * self.learning_rate
+                    * factor
+                    * (y_coding * np.log(proba)).sum(axis=1)
+                )
+
+                # Only boost positive weights
+                w *= np.exp(estimator_weight * (w > 0))
+                # Renormalize weights
+                w /= w.sum()
+
+                self.estimators_.append(stump)
+                self.estimator_weights_.append(1.0)
+                self.estimator_errors_.append(err_m)
+
+            else:  # SAMME
+                preds = stump.predict(X)
+                incorrect = preds != y
+
+                # Compute weighted error
+                err_m = float(w[incorrect].sum() / w_sum)
+
+                # Clip to avoid division by zero or negative log
+                if err_m == 0:
+                    err_m = 1e-10
+
+                # Early stopping if stump is worse than random guessing.
+                # For multiclass SAMME, random guess accuracy is 1/K, so stop if err >= (K-1)/K.
+                # For binary K=2, this is 0.5.
+                random_guess_err = (self.n_classes_ - 1) / self.n_classes_
+                if err_m >= random_guess_err:
+                    break
+
+                # SAMME weight formula: alpha = ln((1-err)/err) + ln(K-1)
+                # Scaled by learning_rate
+                alpha_m = self.learning_rate * (
+                    math.log((1.0 - err_m) / err_m)
+                    + math.log(self.n_classes_ - 1 if self.n_classes_ > 1 else 1.0)
+                )
+
+                # Update weights: w *= exp(alpha * I(y != y_pred))
+                # Only scale up misclassified samples
+                w *= np.exp(alpha_m * incorrect)
+                # Normalize weights
+                w /= w.sum()
+
+                self.estimators_.append(stump)
+                self.estimator_weights_.append(alpha_m)
+                self.estimator_errors_.append(err_m)
 
         return self
 
@@ -156,8 +212,6 @@ class AdaBoostClassifier:
     def predict_proba(self, X: np.ndarray) -> np.ndarray:
         """Predict class probabilities for X.
 
-        Uses the exponential softmax of weighted votes approach.
-
         Parameters
         ----------
         X : shape (n_samples, n_features)
@@ -184,11 +238,20 @@ class AdaBoostClassifier:
         scores = np.zeros((n_samples, self.n_classes_), dtype=float)
 
         assert self.classes_ is not None
-        for stump, alpha in zip(self.estimators_, self.estimator_weights_):
-            preds = stump.predict(X)
-            # Accumulate weight for predicted class
-            for k, c in enumerate(self.classes_):
-                scores[preds == c, k] += alpha
+        if self.algorithm == "SAMME.R":
+            for stump in self.estimators_:
+                proba = _align_proba(stump, X, self.classes_)
+                np.clip(proba, 1e-15, None, out=proba)
+                log_proba = np.log(proba)
+                centered = log_proba - log_proba.mean(axis=1, keepdims=True)
+                scores += centered
+            scores /= len(self.estimators_)
+        else:  # SAMME
+            for stump, alpha in zip(self.estimators_, self.estimator_weights_):
+                preds = stump.predict(X)
+                # Accumulate weight for predicted class
+                for k, c in enumerate(self.classes_):
+                    scores[preds == c, k] += alpha
 
         return scores
 
@@ -223,8 +286,76 @@ class AdaBoostClassifier:
         scores = np.zeros((n_samples, self.n_classes_), dtype=float)
 
         assert self.classes_ is not None
-        for stump, alpha in zip(self.estimators_, self.estimator_weights_):
-            preds = stump.predict(X)
-            for k, c in enumerate(self.classes_):
-                scores[preds == c, k] += alpha
-            yield self.classes_[np.argmax(scores, axis=1)]
+        if self.algorithm == "SAMME.R":
+            for stump in self.estimators_:
+                proba = _align_proba(stump, X, self.classes_)
+                np.clip(proba, 1e-15, None, out=proba)
+                log_proba = np.log(proba)
+                centered = log_proba - log_proba.mean(axis=1, keepdims=True)
+                scores += centered
+                yield self.classes_[np.argmax(scores, axis=1)]
+        else:  # SAMME
+            for stump, alpha in zip(self.estimators_, self.estimator_weights_):
+                preds = stump.predict(X)
+                for k, c in enumerate(self.classes_):
+                    scores[preds == c, k] += alpha
+                yield self.classes_[np.argmax(scores, axis=1)]
+
+    def staged_predict_proba(self, X: np.ndarray) -> Iterator[np.ndarray]:
+        """Return probability estimates staged after each boosting round.
+
+        Parameters
+        ----------
+        X : shape (n_samples, n_features)
+            Input samples.
+
+        Yields
+        ------
+        p : shape (n_samples, n_classes)
+            Staged class probability estimates.
+        """
+        if not self.estimators_:
+            raise ValueError("AdaBoostClassifier is not fitted yet.")
+
+        X = np.asarray(X)
+        n_samples = X.shape[0]
+        scores = np.zeros((n_samples, self.n_classes_), dtype=float)
+
+        assert self.classes_ is not None
+        if self.algorithm == "SAMME.R":
+            for m, stump in enumerate(self.estimators_):
+                proba = _align_proba(stump, X, self.classes_)
+                np.clip(proba, 1e-15, None, out=proba)
+                log_proba = np.log(proba)
+                centered = log_proba - log_proba.mean(axis=1, keepdims=True)
+                scores += centered
+                curr_scores = scores / (m + 1)
+                scores_shifted = curr_scores - np.max(curr_scores, axis=1, keepdims=True)
+                exp_scores = np.exp(scores_shifted)
+                yield exp_scores / np.sum(exp_scores, axis=1, keepdims=True)
+        else:  # SAMME
+            for stump, alpha in zip(self.estimators_, self.estimator_weights_):
+                preds = stump.predict(X)
+                for k, c in enumerate(self.classes_):
+                    scores[preds == c, k] += alpha
+                scores_shifted = scores - np.max(scores, axis=1, keepdims=True)
+                exp_scores = np.exp(scores_shifted)
+                yield exp_scores / np.sum(exp_scores, axis=1, keepdims=True)
+
+
+def _align_proba(estimator: DecisionStump, X: np.ndarray, global_classes: np.ndarray) -> np.ndarray:
+    """Align predicted probabilities of the estimator with global classes.
+
+    In case the estimator did not see all classes during fit.
+    """
+    proba = estimator.predict_proba(X)
+    assert estimator.classes_ is not None
+    if np.array_equal(estimator.classes_, global_classes):
+        return proba
+
+    aligned_proba = np.zeros((X.shape[0], len(global_classes)), dtype=proba.dtype)
+    class_to_idx = {c: i for i, c in enumerate(global_classes)}
+    for i, c in enumerate(estimator.classes_):
+        if c in class_to_idx:
+            aligned_proba[:, class_to_idx[c]] = proba[:, i]
+    return aligned_proba
