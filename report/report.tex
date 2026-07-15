@@ -272,18 +272,20 @@ threshold required by the specification.
 \textbf{Dataset} & \textbf{Custom} & \textbf{Sklearn} & \textbf{Stump} & $|\Delta|$\\
 \midrule
 Breast Cancer & 0.9469 & 0.9469 & 0.8850 & 0.0000\\
-Adult Income  & 0.8210 & 0.8170 & 0.7520 & 0.0040\\
-MNIST 3-vs-8  & 0.9200 & 0.9300 & 0.8375 & 0.0100\\
+Adult Income  & 0.8119 & 0.8109 & 0.7638 & 0.0010\\
+MNIST 3-vs-8  & 0.9292 & 0.9317 & 0.8392 & 0.0025\\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Why is Adult accuracy ``only'' 82\%?}  Adult Income is
+\textbf{Why is Adult accuracy ``only'' 81\%?}  Adult Income is
 genuinely difficult: the negative class accounts for $76\%$ of
-samples, the feature space is high-dimensional after OHE, and the
-income boundary is a complex non-linear function of age, education,
-occupation, and capital gains.  A single unpruned tree achieves 82\%
-partly by defaulting toward the majority class.  The stump at 75\%
+samples, the feature space is high-dimensional after OHE (100 columns),
+and the income boundary is a complex non-linear function of age, education,
+occupation, and capital gains.  A single unpruned tree achieves 81\%
+partly by defaulting toward the majority class.  The custom tree
+matches sklearn within 0.1\% (0.8119 vs.\ 0.8109), well within the
+$\le 2\%$ threshold.  The stump at 76\%
 barely exceeds the na\"ive majority-class baseline ($\approx76\%$).
 
 \textbf{Why does the stump achieve only F1=0.43 on Adult?}  A depth-1
@@ -293,10 +295,11 @@ tends to predict the majority class for most observations, which
 yields high accuracy but very low recall for the minority, collapsing
 macro F1.
 
-\textbf{MNIST accuracy of 92\%} is impressive for a single unpruned
-tree on raw pixels.  Digits 3 and 8 are the hardest MNIST binary pair,
-yet 784 binary/real features provide enough discriminative signal for
-a deep tree.
+\textbf{MNIST accuracy of 93\%} is impressive for a single unpruned
+tree on raw pixels.  Digits 3 and 8 share curved strokes and are one of
+the hardest MNIST binary pairs, yet 784 pixel features provide enough
+discriminative signal for a deep tree.  Our custom tree achieves 92.9\%
+vs.\ sklearn's 93.2\%, a difference of 0.25\%.
 
 \subsection{Experiment 2: AdaBoost Scaling}
 \label{ssec:ada_scale}
@@ -395,14 +398,17 @@ benefits both ensemble methods equally.}
 
 \textbf{Key findings.}  (1) Both ensembles reduce inter-quartile
 range significantly compared with the single tree, confirming
-variance reduction.  (2) On Breast Cancer, Random Forest narrows
-the AUC-ROC spread to near zero, while AdaBoost shows slightly
-wider boxes---its sequential dependence between rounds introduces
-more cross-fold variability.  (3) On MNIST with 784 raw-pixel
-features, both ensembles perform similarly because the random
-feature sub-sampling in RF effectively focuses each tree on the
-most informative pixel regions, approximating the benefit of
-AdaBoost's re-weighting.
+variance reduction.  (2) On Breast Cancer, AdaBoost achieves the
+highest mean accuracy ($0.9755 \pm 0.0186$) while Random Forest
+is close behind ($0.9631 \pm 0.0203$); on AUC-ROC both reach
+$>0.98$.  (3) On Adult Income, our custom Random Forest
+($0.8657 \pm 0.0036$) marginally outperforms sklearn's RF
+($0.8553 \pm 0.0036$), demonstrating that the custom implementation
+is competitive.  (4) On MNIST with 784 raw-pixel
+features, Random Forest dominates with $0.9808 \pm 0.0035$ accuracy
+vs.\ AdaBoost's $0.9505 \pm 0.0032$---the random feature
+sub-sampling effectively focuses each tree on the most
+informative pixel regions.
 
 \subsection{Experiment 5: Noise Robustness}
 \label{ssec:noise}
@@ -502,7 +508,7 @@ marginally on total decomposed error.
 \centering
 \includegraphics[width=0.95\linewidth]{figures/scree_plot.png}
 \caption{PCA scree plot on Breast Cancer.  90\% of variance is captured
-by the first 5 principal components.}
+by the first 7 principal components.}
 \label{fig:scree}
 \end{figure}
 
@@ -522,24 +528,28 @@ clusters (centre), and DBSCAN clusters (right).}
 \label{fig:pcascatter}
 \end{figure}
 
-\textbf{PCA.}  Only 5 of 30 features account for 90\% of the
-variance (Fig.~\ref{fig:scree}).  This high effective dimensionality
-redundancy explains why even a single unpruned tree achieves 94\%
-accuracy---a large portion of features are either correlated or
-uninformative.
+\textbf{PCA.}  The first 7 of 30 principal components account for
+$\ge 90\%$ of the variance (Fig.~\ref{fig:scree}).  This moderate
+effective dimensionality explains why even a single unpruned tree
+achieves over 94\% accuracy---the majority of 30 features are
+correlated cell-nucleus measurements, and the 7-PC projection
+captures the essential discriminative structure.
 
 \textbf{K-Means.}  The elbow at $k{=}2$ (Fig.~\ref{fig:elbow})
 aligns with the binary classification task.  The K-Means clusters
 recover the malignant/benign separation with an Adjusted Rand Index
-(ARI) of $0.58$.  The moderate ARI reflects that the two classes
+(ARI) of $\mathbf{0.6536}$.  The moderate ARI reflects that the two classes
 partially overlap in PCA space (Fig.~\ref{fig:pcascatter}), which
 is the same overlap that challenges classifiers.
 
 \textbf{DBSCAN.}  With $\varepsilon{=}3.5$ (chosen from the
 k-distance plot, Fig.~\ref{fig:kdist}), DBSCAN achieves ARI of
-$0.58$, comparable to K-Means.  DBSCAN additionally identifies
-approximately 12\% of samples as noise (boundary-region points),
-which correspond to the clinically ambiguous cases that are hardest
+$0.0653$, substantially lower than K-Means.  This low ARI indicates
+that density-based clustering struggles on the Breast Cancer dataset:
+the two classes are not separated by a density gap but rather blend
+along a continuous manifold.  DBSCAN additionally labels
+approximately $13.2\%$ of samples as noise---boundary-region points
+corresponding to the clinically ambiguous cases that are hardest
 to classify correctly.
 
 \begin{figure}[h]
@@ -609,14 +619,17 @@ Random Forest dominates in \emph{three} scenarios:
 \end{enumerate}
 
 \subsection{Connection to Unsupervised Structure}
-The PCA analysis shows that Breast Cancer has a compact two-cluster
-structure in 5D (90\% variance), explaining why both ensembles
-achieve near-perfect AUC-ROC ($\ge 0.98$) on that dataset.  The
-DBSCAN noise fraction of 12\% identifies the genuinely ambiguous
-boundary samples---the \emph{same} samples that AdaBoost re-weights
-heavily in later rounds, which explains both its lower bias and its
-vulnerability to label noise: it cares disproportionately about the
-hardest cases.
+The PCA analysis shows that Breast Cancer's variance is spread across
+7 principal components (not a tight 2D cluster), yet both ensembles
+achieve near-perfect AUC-ROC ($\ge 0.98$).  The high K-Means ARI
+($0.6536$) confirms that the malignant/benign boundary is largely
+linearly separable in PC space.  By contrast, DBSCAN's low ARI
+($0.0653$) and noise fraction of $13.2\%$ reveal that the
+density structure is diffuse---there is no clean density gap between
+classes.  The $13.2\%$ noise points are the boundary-region samples
+that AdaBoost re-weights heavily in later rounds, which explains
+both its lower bias and its vulnerability to label noise: it cares
+disproportionately about the hardest cases.
 
 \subsection{Implementation Correctness}
 Our custom tree matches sklearn within 1\% absolute accuracy on all
@@ -639,9 +652,10 @@ concern.
 
 \textbf{Limitations.}  Experiments use fixed hyperparameters
 (100 estimators, \texttt{max\_features=sqrt}).  A full grid search
-might narrow the performance gap.  The Adult Income experiments were
-run on subsampled data in initial trials (5k samples); the final
-run uses the full 48k dataset.
+might narrow the performance gap.  All experiments use the full
+datasets: Breast Cancer (569 samples), Adult Income (full
+$\approx45{,}000$ train/test split after dropping missing rows), and
+MNIST 3-vs-8 (6,000 samples, satisfying the $\ge 5000$ specification).
 
 \textbf{Future Work.}  XGBoost-style second-order gradient boosting,
 approximate split finding for large datasets, and neural ensemble
