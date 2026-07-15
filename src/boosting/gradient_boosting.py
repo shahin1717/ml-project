@@ -44,23 +44,36 @@ class _RegressionTree:
 
     def _best_split(self, X, r):
         n_samples, n_features = X.shape
-        parent_var = r.var() * n_samples
+        if n_samples <= 1:
+            return None, None, -1
+
+        parent_var_n = r.var() * n_samples
         best_gain, best_feature, best_threshold = -1, None, None
 
         for feature in range(n_features):
-            order = np.argsort(X[:, feature])
-            xs, rs = X[order, feature], r[order]
-            for i in range(1, n_samples):
-                if xs[i] == xs[i - 1]:
+            vals = X[:, feature]
+            # Use up to 20 quantiles to find splits extremely quickly
+            thresholds = np.percentile(vals, np.linspace(5, 95, num=20))
+            thresholds = np.unique(thresholds)
+
+            for t in thresholds:
+                left_mask = vals <= t
+                right_mask = ~left_mask
+
+                left_n = left_mask.sum()
+                right_n = right_mask.sum()
+                if left_n == 0 or right_n == 0:
                     continue
-                left_r, right_r = rs[:i], rs[i:]
-                left_var = left_r.var() * len(left_r)
-                right_var = right_r.var() * len(right_r)
-                gain = parent_var - left_var - right_var
+
+                left_var_n = r[left_mask].var() * left_n
+                right_var_n = r[right_mask].var() * right_n
+                gain = parent_var_n - left_var_n - right_var_n
+
                 if gain > best_gain:
                     best_gain = gain
                     best_feature = feature
-                    best_threshold = (xs[i] + xs[i - 1]) / 2
+                    best_threshold = t
+
         return best_feature, best_threshold, best_gain
 
     def predict(self, X):
@@ -90,6 +103,7 @@ class GradientBoostingClassifier:
         self.init_ = None
 
     def fit(self, X, y):
+        self._rng = np.random.default_rng(self.random_state)
         X = np.asarray(X)
         y = np.asarray(y, dtype=float)
 
