@@ -21,7 +21,7 @@ data/
 *.test
 
 # Report / LaTeX
-report/*.pdf
+
 report/*.aux
 report/*.log
 report/*.toc
