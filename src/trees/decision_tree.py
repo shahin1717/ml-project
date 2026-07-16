@@ -224,11 +224,21 @@ def best_split(
         rc = right_cum[:-1][valid]   # (n_valid, n_classes)
         rw = right_w[:-1][valid]     # (n_valid,)
 
+        # Filter out candidates with zero weight on left or right to avoid division warnings
+        valid_mask = (lw > 0) & (rw > 0)
+        if not valid_mask.any():
+            continue
+
+        lc = lc[valid_mask]
+        lw = lw[valid_mask]
+        rc = rc[valid_mask]
+        rw = rw[valid_mask]
+
         # Compute impurity at each cut-point vectorially
         if criterion == "gini":
             lp = lc / lw[:, None]                        # left class probs
             rp = rc / rw[:, None]                        # right class probs
-            left_imp  = 1.0 - (lp ** 2).sum(axis=1)     # (n_valid,)
+            left_imp  = 1.0 - (lp ** 2).sum(axis=1)     # (n_filtered,)
             right_imp = 1.0 - (rp ** 2).sum(axis=1)
         else:  # entropy
             eps = 1e-12
@@ -244,7 +254,7 @@ def best_split(
             best_gain = float(gains[best_i])
             best_feature = int(feature)
             # threshold = midpoint between the two original sorted values
-            valid_idx = np.where(valid)[0]
+            valid_idx = np.where(valid)[0][valid_mask]
             i = valid_idx[best_i]
             best_threshold = float((xs[i] + xs[i + 1]) / 2.0)
 

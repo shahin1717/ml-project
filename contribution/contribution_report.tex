@@ -1,1 +1,51 @@
-% Team contribution report – placeholder stub
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{geometry}
+\usepackage{booktabs}
+\usepackage{hyperref}
+
+\geometry{margin=1in}
+
+\title{Team Contribution Report \\ \large ML Final Project: Ensemble Methods}
+\author{Team Members: Shahin Alakparov, Narmina Ibragimova, Hasan Mammadov}
+\date{Summer 2026}
+
+\begin{document}
+\maketitle
+
+\section{Introduction}
+This report outlines the individual contributions of each team member to the design, implementation, evaluation, and documentation of the Machine Learning Final Project on Ensemble Methods. All implementations were built from scratch using NumPy.
+
+\section{Detailed Contributions}
+
+\subsection{Shahin Alakparov}
+\begin{itemize}
+    \item \textbf{Modules/Code Sections:} CART Decision Tree, Random Forest aggregation logic, AdaBoost training loops, model prediction wrapper.
+    \item \textbf{Report Sections:} Abstract, Introduction, CART Tree \& Random Forest Methodology, and Experiments 1--3 results/analysis.
+    \item \textbf{Experiments:} Experiment 1 (Baseline Agreement), Experiment 2 (AdaBoost Scaling), and Experiment 3 (Random Forest Scaling).
+    \item \textbf{Slides:} Overview \& Outline, CART Decision Tree split search, and AdaBoost/Random Forest scaling slides.
+    \item \textbf{Other Tasks:} Repository architecture design, modular package structures, CI/CD pipeline setup, and integration of the unit test harness (93\% coverage).
+\end{itemize}
+
+\subsection{Narmina Ibragimova}
+\begin{itemize}
+    \item \textbf{Modules/Code Sections:} KMeans clustering, DBSCAN density-based clustering, t-SNE projection wrapper, SAMME.R calibration algorithm, and Gradient Boosting Machine (GBM) bonus implementation.
+    \item \textbf{Report Sections:} Methodology for GBM, KMeans/DBSCAN clustering, and Experiments 6 \& 7 results/discussion.
+    \item \textbf{Experiments:} Experiment 6 (Bias-Variance decomposition) and Experiment 7 (Unsupervised representation evaluation).
+    \item \textbf{Slides:} Ensemble bias-variance trade-offs, GBM bonus comparison, and unsupervised clustering visualization slides.
+    \item \textbf{Other Tasks:} Data preprocessing pipelines, dataset loading utilities, package version compatibility checks, and final LaTeX compilation.
+\end{itemize}
+
+\subsection{Hasan Mammadov}
+\begin{itemize}
+    \item \textbf{Modules/Code Sections:} RandomForestClassifier bagging mechanics, PCA representation projection, cross-validation evaluation engine, and noise robustness evaluation modules.
+    \item \textbf{Report Sections:} Random Forest bagging and PCA methodology, and Experiments 4 \& 5 key findings/analysis.
+    \item \textbf{Experiments:} Experiment 4 (5-fold cross-validation evaluations) and Experiment 5 (noise robustness evaluations under feature/label noise).
+    \item \textbf{Slides:} RandomForest head-to-head results, PCA dimensionality reduction, and noise robustness slides.
+    \item \textbf{Other Tasks:} Reusable plotting/visualization helper utilities, figures generation scripts, and references/bibliography coordination.
+\end{itemize}
+
+\section{Agreement}
+All team members have reviewed and electronically agreed to the accuracy of the division of contributions described in this report.
+
+\end{document}

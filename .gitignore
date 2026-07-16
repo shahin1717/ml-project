@@ -49,3 +49,7 @@ presentation/*.vrb
 Thumbs.db
 ml-project.code-workspace
 .agents/
+
+# Presentation script and explanation guides
+slides/script.md
+slides/explanation.md

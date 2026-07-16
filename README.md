@@ -202,8 +202,8 @@ ml-project/
 
 ### 1. Clone & Set Up Virtual Environment
 ```bash
-git clone <repo-url> team-name
-cd team-name
+git clone https://github.com/shahin1717/ml-project
+cd ml-project
 
 # Create and activate virtual environment
 python -m venv venv

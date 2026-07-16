@@ -15,24 +15,24 @@
 \usepackage{multirow}
 
 % ===== TITLE & AUTHORS ================================================
-\title{Ensemble Methods: Boosting vs.\ Bagging---An Empirical Study\\
-{\large AI Academy Final Project Report, Spring 2026}}
+\title{Ensemble Methods: Boosting vs.\ Bagging\\An Empirical Study\\
+{\large AI Academy Final Project Report, Summer 2026}}
 
 \author{
 \IEEEauthorblockN{Shahin Alakparov, Narmina Ibragimova, Hasan Mammadov}
 \IEEEauthorblockA{AI Academy, National AI Center\\
 Spring 2026\\
-\{student1, student2, student3\}@example.com}
+\{sahin.alekperov25, narmine.ibrahimova25, hasan.memmedov25\}@aiacademy.az}
 }
 
 % ======================================================================
 \begin{document}
 \maketitle
 
-% ----- Abstract --------------------------------------------------------
+% --- Abstract --------------------
 \begin{abstract}
 We present a systematic empirical comparison of two ensemble learning
-paradigms---\emph{boosting} and \emph{bagging}---implemented entirely
+paradigms-\emph{boosting} and \emph{bagging}-implemented entirely
 from scratch using NumPy.  Our custom implementations include a CART
 Decision Tree (with $O(N\!\log\!N)$ split search), AdaBoost (discrete
 SAMME with decision stumps), and a Random Forest (bootstrap aggregation
@@ -43,9 +43,9 @@ experiments investigate scaling, noise robustness, bias-variance
 decomposition, and cluster structure.  We find that \emph{AdaBoost
 minimises Bias$^2$ more aggressively (0.0231 vs.\ 0.0317 for RF) while
 Random Forest achieves far lower Variance (0.0076 vs.\ 0.0131 for AdaBoost)}.
-Under label corruption at $\eta{=}0.20$ on Breast Cancer, Random Forest degrades only
+Under label corruption at $\eta{=}0.20$, Random Forest degrades only
 marginally while AdaBoost suffers a significant accuracy collapse,
-confirming that re-weighting amplifies label noise on clean boundaries.  On clean data both
+confirming that re-weighting amplifies label noise.  On clean data both
 ensembles substantially outperform a single tree, with Random Forest
 achieving the highest AUC-ROC on Breast Cancer (where all figures are
 reported).  Our implementations
@@ -54,7 +54,7 @@ correctness.  Code is available at \texttt{https://github.com/shahin1717/ml-proj
 \texttt{v1.0-final}).
 \end{abstract}
 
-% ----- Introduction ---------------------------------------------------
+% --- Introduction -----------------
 \section{Introduction}
 \label{sec:intro}
 
@@ -76,8 +76,8 @@ reference baseline) and use only NumPy for all numerical operations.
 
 This setting is representative of real-world ML engineering: when
 a team needs to port an algorithm to a new language or hardware target,
-understanding the mathematical core---rather than relying on library
-abstractions---is essential.
+understanding the mathematical core-rather than relying on library
+abstractions-is essential.
 
 \textbf{Contributions.} (1) Fully from-scratch implementations of
 CART, AdaBoost, and Random Forest with 93\% test coverage.
@@ -93,7 +93,7 @@ experimental design.  Section~\ref{sec:results} presents empirical
 results with analysis.  Section~\ref{sec:discussion} synthesises
 findings, and Section~\ref{sec:conclusion} concludes.
 
-% ----- Related Work ---------------------------------------------------
+% --- Related Work -----------------
 \section{Related Work}
 \label{sec:related}
 
@@ -102,7 +102,7 @@ CART~\cite{quinlan1986induction} builds binary trees by greedily
 selecting splits that minimise impurity.  The two standard impurity
 measures are Gini impurity $I_G = 1 - \sum_c p_c^2$ and Shannon
 entropy $I_E = -\sum_c p_c \log_2 p_c$.  Trees are prone to
-overfitting on noisy data and have high variance---the primary
+overfitting on noisy data and have high variance-the primary
 motivation for ensemble methods.
 
 \subsection{AdaBoost}
@@ -139,7 +139,7 @@ partitions data by minimising within-cluster sum of squares.  DBSCAN~\cite{ester
 identifies clusters of arbitrary shape without requiring the number of
 clusters as input, labelling low-density points as noise.
 
-% ----- Methods --------------------------------------------------------
+% --- Methods --------------------
 \section{Methods}
 \label{sec:methods}
 
@@ -148,7 +148,7 @@ We implement binary splitting with exhaustive threshold search over
 continuous features.  For each feature we sort the $N$ samples
 ($O(N\log N)$) and sweep all midpoints between consecutive distinct
 values using \texttt{np.cumsum} to compute weighted class counts
-incrementally---avoiding an inner Python loop over samples.  The
+incrementally-avoiding an inner Python loop over samples.  The
 per-feature complexity is thus $O(N\log N + N)$ rather than
 $O(N^2)$.  The overall split search is $O(PN\log N)$ where $P$ is
 the number of candidate features.
@@ -198,7 +198,7 @@ lowest inertia.  \textbf{DBSCAN} identifies core points (at least
 \texttt{min\_samples} neighbours within $\varepsilon$) and expands
 clusters via BFS.
 
-% ----- Experimental Setup ---------------------------------------------
+% --- Experimental Setup ---------------
 \section{Experimental Setup}
 \label{sec:experiments}
 
@@ -229,8 +229,7 @@ The low noise and clean boundary make it an ideal benchmark.
 \textbf{Adult Income} predicts whether annual income exceeds \$50K.
 The dataset is class-imbalanced (${\approx}76\%$ negative class),
 contains mixed continuous and categorical features (one-hot encoded
-to 100 columns after one-hot expansion of 8 categorical variables),
-and is class-imbalanced.  Rows with missing values (marked \texttt{?})
+to 100 columns after one-hot expansion of 8 categorical variables). Rows with missing values (marked \texttt{?})
 were discarded via \texttt{dropna}, reducing the dataset size from 48,842 to
 45,222 cleaned examples.
 
@@ -258,7 +257,7 @@ replicates of the Breast Cancer training set, evaluating all models
 on a fixed held-out test split.  All results reported below used
 100 estimators for both ensembles.
 
-% ----- Results --------------------------------------------------------
+% --- Results --------------------
 \section{Results}
 \label{sec:results}
 
@@ -272,7 +271,7 @@ threshold required by the specification.
 
 \begin{table}[h]
 \centering
-\caption{Experiment~1: Baseline accuracy---custom vs.\ sklearn.}
+\caption{Experiment~1: Baseline accuracy-custom vs.\ sklearn.}
 \label{tab:baseline}
 \setlength{\tabcolsep}{4pt}
 \begin{tabular}{lcccc}
@@ -364,7 +363,7 @@ Accuracy peaks around \texttt{max\_depth}=10; deeper trees overfit.}
 \textbf{Number of trees} (Fig.~\ref{fig:rf_estimators}).  Accuracy
 is noisy for $T{<}20$ trees (high variance from limited averaging)
 then smooths out above $T{=}50$.  Beyond $T{=}100$ there is
-negligible gain---variance reduction saturates as the law of large
+negligible gain-variance reduction saturates as the law of large
 numbers kicks in.
 
 \textbf{Tree depth} (Fig.~\ref{fig:rf_depth}).  Shallow trees
@@ -414,7 +413,7 @@ $>0.98$.  (3) On Adult Income, our custom Random Forest
 ($0.8507 \pm 0.0023$), demonstrating that the custom implementation
 is competitive.  (4) On MNIST with 784 raw-pixel
 features, Random Forest dominates with $0.9808 \pm 0.0035$ accuracy
-vs.\ AdaBoost's $0.9505 \pm 0.0032$---the random feature
+vs.\ AdaBoost's $0.9505 \pm 0.0032$-the random feature
 sub-sampling effectively focuses each tree on the most
 informative pixel regions.
 
@@ -437,7 +436,7 @@ Random Forest degrades gracefully; AdaBoost collapses at high noise.}
 \caption{Noise robustness on Adult Income.  Random Forest retains
 a higher absolute accuracy at every $\eta$, but AdaBoost degrades
 \emph{less} in relative terms ($\Delta{=}0.0019$ vs.\ RF's
-$\Delta{=}0.0056$ from $\eta{=}0$ to $0.20$)---the opposite of the
+$\Delta{=}0.0056$ from $\eta{=}0$ to $0.20$)-the opposite of the
 degradation-rate ordering seen on Breast Cancer.}
 \label{fig:noise_adult}
 \end{figure}
@@ -546,7 +545,7 @@ clusters (centre), and DBSCAN clusters (right).}
 \textbf{PCA.}  The first 7 of 30 principal components account for
 $\ge 90\%$ of the variance (Fig.~\ref{fig:scree}).  This moderate
 effective dimensionality explains why even a single unpruned tree
-achieves over 94\% accuracy---the majority of 30 features are
+achieves over 94\% accuracy-the majority of 30 features are
 correlated cell-nucleus measurements, and the 7-PC projection
 captures the essential discriminative structure.
 
@@ -563,7 +562,7 @@ $0.0653$, substantially lower than K-Means.  This low ARI indicates
 that density-based clustering struggles on the Breast Cancer dataset:
 the two classes are not separated by a density gap but rather blend
 along a continuous manifold.  DBSCAN additionally labels
-approximately $13.2\%$ of samples as noise---boundary-region points
+approximately $13.2\%$ of samples as noise-boundary-region points
 corresponding to the clinically ambiguous cases that are hardest
 to classify correctly.
 
@@ -613,7 +612,7 @@ are nearly tied (AdaBoost $0.8310 \pm 0.0124$ vs.\ GBM
 $0.8300 \pm 0.0259$), suggesting GBM's advantage is most pronounced
 on cleaner, lower-dimensional data.
 
-% ----- Discussion -----------------------------------------------------
+% --- Discussion -------------------
 \section{Discussion}
 \label{sec:discussion}
 
@@ -644,7 +643,7 @@ achieve near-perfect AUC-ROC ($\ge 0.98$).  The high K-Means ARI
 ($0.6536$) confirms that the malignant/benign boundary is largely
 linearly separable in PC space.  By contrast, DBSCAN's low ARI
 ($0.0653$) and noise fraction of $13.2\%$ reveal that the
-density structure is diffuse---there is no clean density gap between
+density structure is diffuse-there is no clean density gap between
 classes.  The $13.2\%$ noise points are the boundary-region samples
 that AdaBoost re-weights heavily in later rounds, which explains
 both its lower bias and its vulnerability to label noise: it cares
@@ -656,7 +655,7 @@ three datasets (Table~\ref{tab:baseline}), confirming that the $O(N\log N)$
 cumsum sweep correctly implements the CART criterion without
 floating-point errors.
 
-% ----- Conclusion -----------------------------------------------------
+% --- Conclusion -------------------
 \section{Conclusion}
 \label{sec:conclusion}
 
