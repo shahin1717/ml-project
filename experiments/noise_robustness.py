@@ -125,7 +125,7 @@ def run_experiment_5() -> None:
             adaboost_accs.append(ada_acc)
             rf_accs.append(rf_acc)
 
-            print(f"{eta:<8.2f} | {ada_acc:<16.4f} | {rf_acc:<20.4f}")
+            print(f"{eta:<8.2f} | {ada_acc:<16.4f} | {rf_acc:<20.4f}  (AdaBoost fitted: {len(ada.estimators_)} estimators)")
 
         # ------------------------------------------------------------------
         # Plot accuracy degradation curves

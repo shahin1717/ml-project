@@ -97,13 +97,14 @@
     \midrule
     Breast Cancer Wisconsin & 569     & 30  & 2 & Small, low-noise, well-separated classes \\
     Adult Income (Census)   & 45\,222 & 100 & 2 & Large, class imbalance ($\approx$76\% negative) \\
-    MNIST 3-vs-8            & 6\,000  & 784 & 2 & High-dimensional, 56$\times$ more features than samples per class \\
+    MNIST 3-vs-8            & 6\,000  & 784 & 2 & High-dimensional, visual digit representation \\
+    Forest Covertype        & 30\,000 & 54  & 7 & Multiclass, severe imbalance ($\approx$0.5\% minority) \\
     \bottomrule
   \end{tabular}
   \vspace{6pt}
 
   \begin{itemize}\small
-    \item The three datasets span orthogonal difficulty axes: \emph{size}, \emph{dimensionality}, and \emph{class balance} - allowing conclusions to generalise beyond a single regime.
+    \item The four datasets span orthogonal difficulty axes: \emph{size}, \emph{dimensionality}, \emph{class balance}, and \emph{multiclass imbalanced complexity}.
     \item All experiments use fixed seeds for reproducibility.
   \end{itemize}
 \end{frame}
@@ -274,14 +275,15 @@
   \begin{columns}[T]
     \begin{column}{0.50\textwidth}
       \small
-      \textbf{Protocol:} Stratified 5-fold CV, $T=100$ estimators, three metrics (Accuracy, Macro-F1, AUC-ROC) on all three datasets.
+      \textbf{Protocol:} Stratified 5-fold CV, $T=100$ estimators, three metrics (Accuracy, Macro-F1, AUC-ROC) on all datasets.
       \vspace{6pt}
 
       \textbf{Key findings:}
       \begin{itemize}\small
         \item \textbf{Breast Cancer:} AdaBoost achieves highest accuracy ($0.9755 \pm 0.0186$) - sequential re-weighting exploits the clean, low-noise structure.
-        \item \textbf{Adult Income:} Custom RF outperforms AdaBoost on AUC-ROC ($0.9169$ vs. $0.9073$) - bootstrap averaging handles the class imbalance more robustly than weight amplification.
-        \item \textbf{MNIST 3-vs-8:} RF dominates ($0.9808 \pm 0.0035$) - random subspacing effectively handles 784 noisy pixel features; AdaBoost struggles with high dimensionality.
+        \item \textbf{Adult Income:} Custom RF outperforms AdaBoost on AUC-ROC ($0.9169$ vs. $0.9073$) - bootstrap averaging handles the class imbalance more robustly.
+        \item \textbf{MNIST 3-vs-8:} RF dominates ($0.9808 \pm 0.0035$) - random subspacing effectively handles 784 pixel features.
+        \item \textbf{Forest Covertype:} AdaBoost's macro-F1 collapses to $0.3186 \pm 0.0093$ due to ignoring rare classes, whereas RF achieves $0.7457 \pm 0.0245$ (sklearn) and $0.6501 \pm 0.0258$ (custom), demonstrating RF's superior imbalance tolerance.
       \end{itemize}
     \end{column}
     \begin{column}{0.50\textwidth}
@@ -302,10 +304,10 @@
 
       \textbf{Mechanistic explanation:}
       \begin{itemize}\small
-        \item AdaBoost's weight update \emph{amplifies} focus on misclassified examples. Under label noise, truly mislabelled samples receive exponentially increasing weight - the algorithm learns the corrupted labels rather than the true decision boundary.
-        \item Random Forest's bootstrap sampling dilutes each corrupted label: on average, a flipped label appears in only $\approx$63\% of trees, and random feature selection further reduces its influence.
+        \item AdaBoost's weight update \emph{amplifies} focus on misclassified examples. Under label noise, truly mislabelled samples receive exponentially increasing weight - learning corrupted labels.
+        \item Random Forest's bootstrap sampling dilutes each corrupted label: on average, a flipped label appears in only $\approx$63\% of trees.
+        \item \textbf{Covertype regularisation:} On Covertype, introducing noise actually \emph{improves} AdaBoost accuracy from $0.5927$ to $0.6782$ (fitted estimators remains $100$). The noise acts as a stochastic regularizer that prevents AdaBoost from over-focusing on hard dominant-class samples.
       \end{itemize}
-      \textbf{Exception:} On Adult Income, AdaBoost degrades \emph{less} ($\Delta{=}0.0019$) than RF ($\Delta{=}0.0056$) - the imbalanced class structure interacts with noise differently.
     \end{column}
     \begin{column}{0.52\textwidth}
       \centering

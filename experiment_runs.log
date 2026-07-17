@@ -1,0 +1,313 @@
+=== Experiment 1: Baseline Comparison ===
+================================================================================
+Experiment 1: Baseline Comparison
+================================================================================
+
+Evaluating dataset: BREAST_CANCER
+Classifier                | Accuracy   | Macro F1   | AUC-ROC   
+-----------------------------------------------------------------
+Custom DecisionTree       | 0.9469     | 0.9405     | 0.9405    
+Custom DecisionStump      | 0.8850     | 0.8596     | 0.8354    
+Sklearn DecisionTree      | 0.9469     | 0.9405     | 0.9405    
+Absolute Accuracy Difference (Custom vs Sklearn): 0.0000
+=> VERIFICATION PASSED: Agreement is within the 2% threshold.
+
+Evaluating dataset: ADULT
+Classifier                | Accuracy   | Macro F1   | AUC-ROC   
+-----------------------------------------------------------------
+Custom DecisionTree       | 0.8092     | 0.7439     | 0.7452    
+Custom DecisionStump      | 0.7543     | 0.4300     | 0.7593    
+Sklearn DecisionTree      | 0.8105     | 0.7465     | 0.7485    
+Absolute Accuracy Difference (Custom vs Sklearn): 0.0013
+=> VERIFICATION PASSED: Agreement is within the 2% threshold.
+
+Evaluating dataset: MNIST
+Classifier                | Accuracy   | Macro F1   | AUC-ROC   
+-----------------------------------------------------------------
+Custom DecisionTree       | 0.9292     | 0.9288     | 0.9286    
+Custom DecisionStump      | 0.8392     | 0.8386     | 0.8391    
+Sklearn DecisionTree      | 0.9317     | 0.9314     | 0.9317    
+Absolute Accuracy Difference (Custom vs Sklearn): 0.0025
+=> VERIFICATION PASSED: Agreement is within the 2% threshold.
+
+Evaluating dataset: COVERTYPE
+Classifier                | Accuracy   | Macro F1   | AUC-ROC   
+-----------------------------------------------------------------
+Custom DecisionTree       | 0.7802     | 0.6837     | 0.8190    
+Custom DecisionStump      | 0.6388     | 0.1968     | 0.7294    
+Sklearn DecisionTree      | 0.7780     | 0.6796     | 0.8157    
+Absolute Accuracy Difference (Custom vs Sklearn): 0.0022
+=> VERIFICATION PASSED: Agreement is within the 2% threshold.
+
+================================================================================
+
+================================================================================
+
+=== Experiment 2: AdaBoost Scaling ===
+================================================================================
+Experiment 2: AdaBoost Scaling
+================================================================================
+
+Training AdaBoost on dataset: BREAST_CANCER
+Fitted 200 estimators (early stopping may have occurred).
+Saved plot to figures/adaboost_scaling_breast_cancer.png
+
+Training AdaBoost on dataset: ADULT
+Fitted 200 estimators (early stopping may have occurred).
+Saved plot to figures/adaboost_scaling_adult.png
+
+Training AdaBoost on dataset: MNIST
+Fitted 200 estimators (early stopping may have occurred).
+Saved plot to figures/adaboost_scaling_mnist.png
+
+Training AdaBoost on dataset: COVERTYPE
+Fitted 200 estimators (early stopping may have occurred).
+Saved plot to figures/adaboost_scaling_covertype.png
+
+================================================================================
+
+================================================================================
+
+=== Experiment 3: Random Forest Scaling ===
+================================================================================
+Experiment 3: Random Forest Scaling
+================================================================================
+
+Evaluating Random Forest scaling on dataset: BREAST_CANCER
+Part (a): Varying n_estimators (max_depth=None)...
+  n_estimators=1  : test_acc=0.9381, oob_score=0.9096
+  n_estimators=10 : test_acc=0.9558, oob_score=0.9385
+  n_estimators=20 : test_acc=0.9558, oob_score=0.9496
+  n_estimators=40 : test_acc=0.9558, oob_score=0.9605
+  n_estimators=60 : test_acc=0.9646, oob_score=0.9583
+  n_estimators=80 : test_acc=0.9558, oob_score=0.9627
+  n_estimators=100: test_acc=0.9558, oob_score=0.9605
+  n_estimators=120: test_acc=0.9558, oob_score=0.9583
+  n_estimators=140: test_acc=0.9558, oob_score=0.9605
+  n_estimators=160: test_acc=0.9558, oob_score=0.9539
+  n_estimators=180: test_acc=0.9646, oob_score=0.9583
+  n_estimators=200: test_acc=0.9646, oob_score=0.9605
+Saved plot to figures/rf_estimators_scaling_breast_cancer.png
+Part (b): Varying max_depth (n_estimators=100)...
+  max_depth=1 : test_acc=0.9292, oob_score=0.9189
+  max_depth=2 : test_acc=0.9558, oob_score=0.9496
+  max_depth=4 : test_acc=0.9558, oob_score=0.9605
+  max_depth=6 : test_acc=0.9558, oob_score=0.9583
+  max_depth=8 : test_acc=0.9558, oob_score=0.9605
+  max_depth=10: test_acc=0.9558, oob_score=0.9605
+  max_depth=12: test_acc=0.9558, oob_score=0.9605
+  max_depth=14: test_acc=0.9558, oob_score=0.9605
+  max_depth=16: test_acc=0.9558, oob_score=0.9605
+  max_depth=18: test_acc=0.9558, oob_score=0.9605
+  max_depth=20: test_acc=0.9558, oob_score=0.9605
+Saved plot to figures/rf_depth_scaling_breast_cancer.png
+
+Evaluating Random Forest scaling on dataset: ADULT
+Part (a): Varying n_estimators (max_depth=None)...
+  n_estimators=1  : test_acc=0.8232, oob_score=0.8261
+  n_estimators=10 : test_acc=0.8538, oob_score=0.8478
+  n_estimators=20 : test_acc=0.8564, oob_score=0.8546
+  n_estimators=40 : test_acc=0.8585, oob_score=0.8579
+  n_estimators=60 : test_acc=0.8594, oob_score=0.8588
+  n_estimators=80 : test_acc=0.8592, oob_score=0.8590
+  n_estimators=100: test_acc=0.8598, oob_score=0.8591
+  n_estimators=120: test_acc=0.8591, oob_score=0.8598
+  n_estimators=140: test_acc=0.8600, oob_score=0.8606
+  n_estimators=160: test_acc=0.8591, oob_score=0.8612
+  n_estimators=180: test_acc=0.8594, oob_score=0.8612
+  n_estimators=200: test_acc=0.8604, oob_score=0.8608
+Saved plot to figures/rf_estimators_scaling_adult.png
+Part (b): Varying max_depth (n_estimators=100)...
+  max_depth=1 : test_acc=0.7543, oob_score=0.7511
+  max_depth=2 : test_acc=0.7544, oob_score=0.7535
+  max_depth=4 : test_acc=0.8183, oob_score=0.8156
+  max_depth=6 : test_acc=0.8414, oob_score=0.8400
+  max_depth=8 : test_acc=0.8478, oob_score=0.8463
+  max_depth=10: test_acc=0.8513, oob_score=0.8510
+  max_depth=12: test_acc=0.8546, oob_score=0.8555
+  max_depth=14: test_acc=0.8557, oob_score=0.8561
+  max_depth=16: test_acc=0.8570, oob_score=0.8567
+  max_depth=18: test_acc=0.8589, oob_score=0.8576
+  max_depth=20: test_acc=0.8587, oob_score=0.8586
+Saved plot to figures/rf_depth_scaling_adult.png
+
+Evaluating Random Forest scaling on dataset: MNIST
+Part (a): Varying n_estimators (max_depth=None)...
+  n_estimators=1  : test_acc=0.8950, oob_score=0.9148
+  n_estimators=10 : test_acc=0.9750, oob_score=0.9455
+  n_estimators=20 : test_acc=0.9750, oob_score=0.9644
+  n_estimators=40 : test_acc=0.9758, oob_score=0.9758
+  n_estimators=60 : test_acc=0.9775, oob_score=0.9804
+  n_estimators=80 : test_acc=0.9792, oob_score=0.9812
+  n_estimators=100: test_acc=0.9817, oob_score=0.9812
+  n_estimators=120: test_acc=0.9800, oob_score=0.9823
+  n_estimators=140: test_acc=0.9817, oob_score=0.9825
+  n_estimators=160: test_acc=0.9800, oob_score=0.9825
+  n_estimators=180: test_acc=0.9792, oob_score=0.9823
+  n_estimators=200: test_acc=0.9792, oob_score=0.9821
+Saved plot to figures/rf_estimators_scaling_mnist.png
+Part (b): Varying max_depth (n_estimators=100)...
+  max_depth=1 : test_acc=0.9008, oob_score=0.8988
+  max_depth=2 : test_acc=0.9192, oob_score=0.9248
+  max_depth=4 : test_acc=0.9483, oob_score=0.9519
+  max_depth=6 : test_acc=0.9667, oob_score=0.9673
+  max_depth=8 : test_acc=0.9767, oob_score=0.9762
+  max_depth=10: test_acc=0.9792, oob_score=0.9783
+  max_depth=12: test_acc=0.9783, oob_score=0.9804
+  max_depth=14: test_acc=0.9817, oob_score=0.9810
+  max_depth=16: test_acc=0.9792, oob_score=0.9815
+  max_depth=18: test_acc=0.9808, oob_score=0.9817
+  max_depth=20: test_acc=0.9817, oob_score=0.9812
+Saved plot to figures/rf_depth_scaling_mnist.png
+
+Evaluating Random Forest scaling on dataset: COVERTYPE
+Part (a): Varying n_estimators (max_depth=None)...
+  n_estimators=1  : test_acc=0.7152, oob_score=0.7146
+  n_estimators=10 : test_acc=0.8028, oob_score=0.7613
+  n_estimators=20 : test_acc=0.8057, oob_score=0.7885
+  n_estimators=40 : test_acc=0.8118, oob_score=0.8039
+  n_estimators=60 : test_acc=0.8115, oob_score=0.8085
+  n_estimators=80 : test_acc=0.8167, oob_score=0.8096
+  n_estimators=100: test_acc=0.8118, oob_score=0.8105
+  n_estimators=120: test_acc=0.8138, oob_score=0.8113
+  n_estimators=140: test_acc=0.8133, oob_score=0.8113
+  n_estimators=160: test_acc=0.8147, oob_score=0.8116
+  n_estimators=180: test_acc=0.8150, oob_score=0.8116
+  n_estimators=200: test_acc=0.8152, oob_score=0.8114
+Saved plot to figures/rf_estimators_scaling_covertype.png
+Part (b): Varying max_depth (n_estimators=100)...
+  max_depth=1 : test_acc=0.5263, oob_score=0.5354
+  max_depth=2 : test_acc=0.6427, oob_score=0.6261
+  max_depth=4 : test_acc=0.6732, oob_score=0.6749
+  max_depth=6 : test_acc=0.6900, oob_score=0.6904
+  max_depth=8 : test_acc=0.7150, oob_score=0.7153
+  max_depth=10: test_acc=0.7367, oob_score=0.7355
+  max_depth=12: test_acc=0.7532, oob_score=0.7509
+  max_depth=14: test_acc=0.7687, oob_score=0.7640
+  max_depth=16: test_acc=0.7808, oob_score=0.7767
+  max_depth=18: test_acc=0.7883, oob_score=0.7840
+  max_depth=20: test_acc=0.7988, oob_score=0.7932
+Saved plot to figures/rf_depth_scaling_covertype.png
+
+================================================================================
+
+================================================================================
+
+=== Experiment 4: Head-to-Head Comparison ===
+================================================================================
+Experiment 4: Head-to-Head Comparison (100 estimators, 5-fold CV)
+================================================================================
+
+Evaluating dataset: BREAST_CANCER
+
+Model                      | Accuracy           | Macro F1           | AUC-ROC           
+------------------------------------------------------------------------------------------
+Single Tree                | 0.9245 ± 0.0208    | 0.9205 ± 0.0215    | 0.9265 ± 0.0200   
+AdaBoost                   | 0.9755 ± 0.0186    | 0.9737 ± 0.0198    | 0.9937 ± 0.0054   
+Random Forest (custom)     | 0.9631 ± 0.0203    | 0.9604 ± 0.0217    | 0.9891 ± 0.0084   
+Random Forest (sklearn)    | 0.9631 ± 0.0210    | 0.9604 ± 0.0226    | 0.9900 ± 0.0073   
+Saved box plots to figures/head_to_head_{accuracy,macro_f1,auc_roc}_breast_cancer.png
+
+Evaluating dataset: ADULT
+
+Model                      | Accuracy           | Macro F1           | AUC-ROC           
+------------------------------------------------------------------------------------------
+Single Tree                | 0.8121 ± 0.0038    | 0.7504 ± 0.0057    | 0.7530 ± 0.0066   
+AdaBoost                   | 0.8512 ± 0.0052    | 0.7823 ± 0.0065    | 0.9073 ± 0.0036   
+Random Forest (custom)     | 0.8623 ± 0.0032    | 0.8007 ± 0.0049    | 0.9169 ± 0.0020   
+Random Forest (sklearn)    | 0.8507 ± 0.0023    | 0.7891 ± 0.0043    | 0.9020 ± 0.0019   
+Saved box plots to figures/head_to_head_{accuracy,macro_f1,auc_roc}_adult.png
+
+Evaluating dataset: MNIST
+
+Model                      | Accuracy           | Macro F1           | AUC-ROC           
+------------------------------------------------------------------------------------------
+Single Tree                | 0.9407 ± 0.0061    | 0.9406 ± 0.0061    | 0.9407 ± 0.0060   
+AdaBoost                   | 0.9505 ± 0.0032    | 0.9505 ± 0.0032    | 0.9882 ± 0.0012   
+Random Forest (custom)     | 0.9808 ± 0.0035    | 0.9808 ± 0.0035    | 0.9976 ± 0.0008   
+Random Forest (sklearn)    | 0.9822 ± 0.0032    | 0.9822 ± 0.0032    | 0.9980 ± 0.0006   
+Saved box plots to figures/head_to_head_{accuracy,macro_f1,auc_roc}_mnist.png
+
+Evaluating dataset: COVERTYPE
+
+Model                      | Accuracy           | Macro F1           | AUC-ROC           
+------------------------------------------------------------------------------------------
+Single Tree                | 0.7844 ± 0.0036    | 0.6967 ± 0.0101    | 0.8241 ± 0.0069   
+AdaBoost                   | 0.6256 ± 0.0145    | 0.3186 ± 0.0093    | 0.8928 ± 0.0089   
+Random Forest (custom)     | 0.8093 ± 0.0083    | 0.6501 ± 0.0258    | 0.9722 ± 0.0020   
+Random Forest (sklearn)    | 0.8501 ± 0.0059    | 0.7457 ± 0.0245    | 0.9792 ± 0.0018   
+Saved box plots to figures/head_to_head_{accuracy,macro_f1,auc_roc}_covertype.png
+
+================================================================================
+
+================================================================================
+
+=== Experiment 5: Noise Robustness ===
+================================================================================
+Experiment 5: Noise Robustness (label flipping)
+================================================================================
+
+Evaluating dataset: BREAST_CANCER
+eta      | AdaBoost acc.    | Random Forest acc.  
+--------------------------------------------------
+0.00     | 0.9558           | 0.9558                (AdaBoost fitted: 100 estimators)
+0.05     | 0.9292           | 0.9558                (AdaBoost fitted: 100 estimators)
+0.10     | 0.9292           | 0.9469                (AdaBoost fitted: 100 estimators)
+0.20     | 0.8761           | 0.9558                (AdaBoost fitted: 100 estimators)
+Saved plot to figures/noise_robustness_breast_cancer.png
+Accuracy drop (eta=0 -> eta=0.20): AdaBoost=0.0796, Random Forest=0.0000 => AdaBoost degrades more on BREAST_CANCER.
+
+Evaluating dataset: ADULT
+eta      | AdaBoost acc.    | Random Forest acc.  
+--------------------------------------------------
+0.00     | 0.8499           | 0.8598                (AdaBoost fitted: 100 estimators)
+0.05     | 0.8485           | 0.8600                (AdaBoost fitted: 100 estimators)
+0.10     | 0.8483           | 0.8580                (AdaBoost fitted: 100 estimators)
+0.20     | 0.8481           | 0.8541                (AdaBoost fitted: 100 estimators)
+Saved plot to figures/noise_robustness_adult.png
+Accuracy drop (eta=0 -> eta=0.20): AdaBoost=0.0019, Random Forest=0.0056 => Random Forest degrades more on ADULT.
+
+Evaluating dataset: MNIST
+eta      | AdaBoost acc.    | Random Forest acc.  
+--------------------------------------------------
+0.00     | 0.9508           | 0.9817                (AdaBoost fitted: 100 estimators)
+0.05     | 0.9367           | 0.9825                (AdaBoost fitted: 100 estimators)
+0.10     | 0.9300           | 0.9750                (AdaBoost fitted: 100 estimators)
+0.20     | 0.9200           | 0.9767                (AdaBoost fitted: 100 estimators)
+Saved plot to figures/noise_robustness_mnist.png
+Accuracy drop (eta=0 -> eta=0.20): AdaBoost=0.0308, Random Forest=0.0050 => AdaBoost degrades more on MNIST.
+
+Evaluating dataset: COVERTYPE
+eta      | AdaBoost acc.    | Random Forest acc.  
+--------------------------------------------------
+0.00     | 0.5927           | 0.8118                (AdaBoost fitted: 100 estimators)
+0.05     | 0.6782           | 0.8128                (AdaBoost fitted: 100 estimators)
+0.10     | 0.6842           | 0.8115                (AdaBoost fitted: 100 estimators)
+0.20     | 0.6832           | 0.8105                (AdaBoost fitted: 100 estimators)
+Saved plot to figures/noise_robustness_covertype.png
+Accuracy drop (eta=0 -> eta=0.20): AdaBoost=-0.0905, Random Forest=0.0013 => Random Forest degrades more on COVERTYPE.
+
+================================================================================
+================================================================================
+=== Bonus: SAMME vs SAMME.R Calibration ===
+Loading Iris dataset...
+Training SAMME and SAMME.R models with n_estimators=80...
+
+==================================================
+Final Results (at 80 rounds):
+SAMME (Discrete):
+  Train Accuracy: 1.0000
+  Test Accuracy : 0.9000
+  Test Brier    : 0.2001
+  Test Log-Loss : 0.6648
+--------------------------------------------------
+SAMME.R (Real):
+  Train Accuracy: 0.9750
+  Test Accuracy : 0.9000
+  Test Brier    : 0.0899
+  Test Log-Loss : 0.1322
+==================================================
+
+Comparison plot saved successfully to figures/sammer_comparison.png
+
+================================================================================

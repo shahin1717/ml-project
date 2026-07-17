@@ -36,13 +36,18 @@ paradigms-\emph{boosting} and \emph{bagging}-implemented entirely
 from scratch using NumPy.  Our custom implementations include a CART
 Decision Tree (with $O(N\!\log\!N)$ split search), AdaBoost (discrete
 SAMME with decision stumps), and a Random Forest (bootstrap aggregation
-with random feature sub-sampling and OOB scoring).  We evaluate on three
+with random feature sub-sampling and OOB scoring).  We evaluate on four
 benchmark datasets spanning low-dimensional medical data, high-dimensional
-image classification, and large tabular census data.  Seven controlled
+image classification, large tabular census data, and a severely class-imbalanced
+multiclass forest-cover problem.  Seven controlled
 experiments investigate scaling, noise robustness, bias-variance
 decomposition, and cluster structure.  We find that \emph{AdaBoost
 minimises Bias$^2$ more aggressively (0.0231 vs.\ 0.0317 for RF) while
 Random Forest achieves far lower Variance (0.0076 vs.\ 0.0131 for AdaBoost)}.
+On the severely imbalanced Covertype dataset, AdaBoost's accuracy (0.6256)
+masks a macro-F1 collapse to 0.3186, while Random Forest maintains both higher
+accuracy (0.8501) and a far smaller accuracy--F1 gap (0.7457), exposing a failure
+mode invisible to accuracy alone.
 Under label corruption at $\eta{=}0.20$, Random Forest degrades only
 marginally while AdaBoost suffers a significant accuracy collapse,
 confirming that re-weighting amplifies label noise.  On clean data both
@@ -81,8 +86,10 @@ abstractions-is essential.
 
 \textbf{Contributions.} (1) Fully from-scratch implementations of
 CART, AdaBoost, and Random Forest with 93\% test coverage.
-(2) Seven reproducible experiments with fixed random seeds on three
-diverse datasets.  (3) Quantitative bias-variance decomposition
+(2) Seven reproducible experiments with fixed random seeds on
+\textbf{four} diverse datasets, including one satisfying the
+specification's severe-imbalance requirement (minority class
+$\le 1\%$). (3) Quantitative bias-variance decomposition
 comparing boosting and bagging.  (4) Bonus implementations of
 Gradient Boosting and SAMME.R with comparative analysis.
 
@@ -203,7 +210,7 @@ clusters via BFS.
 \label{sec:experiments}
 
 \subsection{Datasets}
-Table~\ref{tab:datasets} summarises the three datasets.  Each
+Table~\ref{tab:datasets} summarises the four datasets.  Each
 presents different modelling challenges.
 
 \begin{table}[h]
@@ -218,6 +225,7 @@ presents different modelling challenges.
 Breast Cancer & 569 & 30 & 2 & Small, clean\\
 Adult Income & 45\,222 & 100 & 2 & Large, imbalanced\\
 MNIST 3-vs-8 & 6\,000 & 784 & 2 & High-dim, visual\\
+Covertype (subset) & 30\,000 & 54 & 7 & Severe imbalance ($\le$1\% minority)\\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -238,6 +246,17 @@ problem.  Digits 3 and 8 share curved strokes, making them one of
 the hardest MNIST binary pairs.  We subsample 6,000 images
 (${\approx}3000$ per class) to satisfy the specification requirement
 of $\ge 5000$ samples while keeping computation manageable.
+
+\textbf{Covertype} predicts forest cover type from cartographic
+variables across seven classes. The full dataset's rarest class
+(Cottonwood/Willow) constitutes $\approx$0.5\% of samples; we
+subsample 30{,}000 rows via \textbf{simple random sampling}
+(not stratified) to preserve this natural rarity, satisfying the
+specification's requirement of at least one dataset with severe
+class imbalance (minority class $\le$1\%). No class-rebalancing
+technique (oversampling, SMOTE, class weights) was applied, since
+the goal of this dataset is precisely to expose how each ensemble
+\emph{natively} handles severe imbalance without correction.
 
 \subsection{Preprocessing}
 Features were standardised (zero mean, unit variance) using training
@@ -281,6 +300,7 @@ threshold required by the specification.
 Breast Cancer & 0.9469 & 0.9469 & 0.8850 & 0.0000\\
 Adult Income  & 0.8092 & 0.8105 & 0.7543 & 0.0013\\
 MNIST 3-vs-8  & 0.9292 & 0.9317 & 0.8392 & 0.0025\\
+Forest Covertype & 0.7802 & 0.7780 & 0.6388 & 0.0022\\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -307,6 +327,14 @@ tree on raw pixels.  Digits 3 and 8 share curved strokes and are one of
 the hardest MNIST binary pairs, yet 784 pixel features provide enough
 discriminative signal for a deep tree.  Our custom tree achieves 92.9\%
 vs.\ sklearn's 93.2\%, a difference of 0.25\%.
+
+\textbf{Covertype correctness.} The custom tree matches sklearn
+within 0.22\% (0.7802 vs. 0.7780), confirming the multiclass split-search
+generalises correctly beyond binary problems. The stump collapses to 63.88\%
+accuracy but only 0.1968 macro-F1---a single binary split cannot
+meaningfully separate seven classes, foreshadowing the same
+capacity limitation that drives AdaBoost's macro-F1 collapse in
+Experiment 4.
 
 \subsection{Experiment 2: AdaBoost Scaling}
 \label{ssec:ada_scale}
@@ -370,6 +398,13 @@ numbers kicks in.
 ($\text{depth}\le 4$) underfit; deep trees ($\text{depth}\ge 15$)
 memorise training data without proportional test improvement.  The
 sweet spot is depth $\approx 10$ for the Breast Cancer dataset.
+
+\textbf{Covertype requires substantially more capacity.} Unlike
+Breast Cancer's early plateau ($\approx$depth 10), Covertype's test
+accuracy is still rising at depth 20 ($0.526 \to 0.799$), and
+estimator scaling plateaus later ($T\approx$40--60 vs.\ $T\approx$50
+for Breast Cancer). This confirms that optimal Random Forest
+capacity is problem-complexity-dependent, not a fixed default.
 This contrasts with AdaBoost: stumps (depth~1) work for AdaBoost
 because the ensemble aggregates thousands of complementary cuts.
 
@@ -403,6 +438,20 @@ benefits both ensemble methods equally.}
 \label{fig:h2h_mnist}
 \end{figure}
 
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.95\linewidth]{figures/head_to_head_accuracy_covertype.png}
+\caption{5-fold CV accuracy on Covertype under 7-way imbalance.}
+\label{fig:h2h_cov_acc}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.95\linewidth]{figures/head_to_head_macro_f1_covertype.png}
+\caption{5-fold CV macro F1-score on Covertype, highlighting AdaBoost's F1 collapse.}
+\label{fig:h2h_cov_f1}
+\end{figure}
+
 \textbf{Key findings.}  (1) Both ensembles reduce inter-quartile
 range significantly compared with the single tree, confirming
 variance reduction.  (2) On Breast Cancer, AdaBoost achieves the
@@ -416,6 +465,18 @@ features, Random Forest dominates with $0.9808 \pm 0.0035$ accuracy
 vs.\ AdaBoost's $0.9505 \pm 0.0032$-the random feature
 sub-sampling effectively focuses each tree on the most
 informative pixel regions.
+
+\textbf{(5) On severely imbalanced Covertype, accuracy alone is
+misleading.} AdaBoost reaches 0.6256 accuracy but only
+\textbf{0.3186} macro-F1---a 0.31 gap indicating the model has
+learned to ignore most of the seven classes in favour of the
+dominant ones. Random Forest (sklearn) achieves both higher accuracy
+(0.8501) \emph{and} a far smaller accuracy--F1 gap (0.7457, a 0.10
+gap), showing bagging tolerates severe multiclass imbalance far
+better than sequential re-weighting. This is the clearest evidence
+in our study that boosting's aggressive bias reduction can actively
+work against it when the class distribution itself is the dominant
+source of difficulty.
 
 \subsection{Experiment 5: Noise Robustness}
 \label{ssec:noise}
@@ -461,6 +522,29 @@ Breast Cancer, where the class boundary is clean; on Adult Income,
 where the boundary is already noisy and complex, AdaBoost's
 re-weighting degrades more gracefully than on cleaner data,
 yielding a smaller accuracy drop than Random Forest at $\eta{=}0.20$.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.95\linewidth]{figures/noise_robustness_covertype.png}
+\caption{Noise robustness on Covertype under label corruption.}
+\label{fig:noise_cov}
+\end{figure}
+
+\textbf{An anomaly on Covertype.} Unlike the other three datasets,
+AdaBoost's accuracy on Covertype \emph{increases} under label
+noise ($0.5927\to0.6832$ from $\eta{=}0$ to $\eta{=}0.20$; all runs
+fit the full 100-estimator budget, ruling out early stopping as the
+cause). Class-wise recall diagnostics confirm this is a noise-induced
+regularisation effect under severe imbalance. At $\eta{=}0.00$,
+AdaBoost is forced to focus on misclassified minority instances, achieving
+moderate recall on them ($40.0\%$ on Class 5, $7.73\%$ on Class 6) at the
+cost of distorting dominant-class boundaries (Class 1 recall is only $53.6\%$).
+Under label noise ($\eta{=}0.05$), the rare classes become unlearnable, so
+AdaBoost ``gives up'' on them (Class 5 recall drops to $1.1\%$, Class 6 to $0\%$)
+and focuses exclusively on the dominant classes (Classes 0, 1, 2). This significantly
+improves prediction quality on these classes (Class 1 recall climbs to $74.8\%$;
+Class 2 recall climbs to $71.0\%$). Since the dominant classes constitute $91.5\%$
+of the dataset, this trade-off yields a net $+8.5\%$ gain in overall test accuracy.
 
 \subsection{Experiment 6: Bias-Variance Decomposition}
 \label{ssec:biasvar}
@@ -623,7 +707,7 @@ AdaBoost matches or slightly exceeds Random Forest in total Bias$^2+$Variance
 decision boundary into complex regions that naive averaging misses.
 
 \subsection{When Does Bagging Win?}
-Random Forest dominates in \emph{three} scenarios:
+Random Forest dominates in \emph{four} scenarios:
 \begin{enumerate}
   \item \textbf{Label noise.}  Averaging independent trees dilutes
         corrupted-label influence; AdaBoost amplifies it.
@@ -634,6 +718,10 @@ Random Forest dominates in \emph{three} scenarios:
         sub-sampling at each node effectively performs implicit
         feature selection per tree, making Random Forest naturally
         robust to irrelevant features without pre-processing.
+  \item \textbf{Severe multiclass imbalance.} On Covertype, Random
+        Forest's accuracy--macro-F1 gap (0.10) is roughly a third of
+        AdaBoost's (0.31), showing bagging degrades more gracefully than
+        boosting when classes are extremely unevenly represented.
 \end{enumerate}
 
 \subsection{Connection to Unsupervised Structure}
@@ -651,7 +739,7 @@ disproportionately about the hardest cases.
 
 \subsection{Implementation Correctness}
 Our custom tree matches sklearn within 1\% absolute accuracy on all
-three datasets (Table~\ref{tab:baseline}), confirming that the $O(N\log N)$
+four datasets (Table~\ref{tab:baseline}), confirming that the $O(N\log N)$
 cumsum sweep correctly implements the CART criterion without
 floating-point errors.
 
@@ -670,10 +758,11 @@ concern.
 
 \textbf{Limitations.}  Experiments use fixed hyperparameters
 (100 estimators, \texttt{max\_features=sqrt}).  A full grid search
-might narrow the performance gap.  All experiments use the full
+might narrow the performance gap.  All experiments use the full or subsampled
 datasets: Breast Cancer (569 samples), Adult Income (full 45,222
-examples after dropping rows with missing values via \texttt{dropna}), and
-MNIST 3-vs-8 (6,000 samples, satisfying the $\ge 5000$ specification).
+examples after dropping rows with missing values via \texttt{dropna}), MNIST
+3-vs-8 (6,000 samples), and Covertype (30,000-sample random subsample,
+preserving the full dataset's $\approx$0.5\% minority-class rarity).
 
 
 % ===== BIBLIOGRAPHY ===================================================
