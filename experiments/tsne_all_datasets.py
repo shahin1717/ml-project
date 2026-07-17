@@ -60,7 +60,7 @@ def main() -> None:
             print(f"Subsampled to {n_samples_limit} rows for performance.")
 
         # 3. Fit t-SNE
-        print(f"Running t-SNE with perplexity=30...")
+        print("Running t-SNE with perplexity=30...")
         tsne = TSNE(
             n_components=2,
             perplexity=min(30, X.shape[0] - 1),

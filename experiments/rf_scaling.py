@@ -6,7 +6,7 @@ from experiments.utils import get_dataset, plot_scaling_curve
 
 def run_experiment_3() -> None:
     """Run Experiment 3: Random Forest scaling (estimators and depth variations)."""
-    datasets = ["breast_cancer", "adult", "mnist"]
+    datasets = ["breast_cancer", "adult", "mnist", "covertype"]
     print("================================================================================")
     print("Experiment 3: Random Forest Scaling")
     print("================================================================================")

@@ -1,14 +1,13 @@
 from __future__ import annotations
 from sklearn.tree import DecisionTreeClassifier  # type: ignore
-from sklearn.metrics import roc_auc_score  # type: ignore
 from src.trees.decision_tree import DecisionTree, DecisionStump
 from src.metrics.evaluation import accuracy_score, precision_recall_f1
-from experiments.utils import get_dataset
+from experiments.utils import get_dataset, safe_auc
 
 
 def run_experiment_1() -> None:
     """Run Experiment 1: Baseline comparison of DecisionTree, DecisionStump, and sklearn DecisionTree."""
-    datasets = ["breast_cancer", "adult", "mnist"]
+    datasets = ["breast_cancer", "adult", "mnist", "covertype"]
     print("================================================================================")
     print("Experiment 1: Baseline Comparison")
     print("================================================================================")
@@ -39,18 +38,17 @@ def run_experiment_1() -> None:
         # Evaluate Custom Tree
         c_acc = accuracy_score(y_test, custom_preds)
         _, _, c_f1 = precision_recall_f1(y_test, custom_preds, average="macro")
-        # For binary classification, roc_auc_score expects probabilities of class 1
-        c_auc = float(roc_auc_score(y_test, custom_probs[:, 1]))
+        c_auc = safe_auc(y_test, custom_probs)
 
         # Evaluate Custom Stump
         s_acc = accuracy_score(y_test, custom_stump_preds)
         _, _, s_f1 = precision_recall_f1(y_test, custom_stump_preds, average="macro")
-        s_auc = float(roc_auc_score(y_test, custom_stump_probs[:, 1]))
+        s_auc = safe_auc(y_test, custom_stump_probs)
 
         # Evaluate Sklearn Tree
         sk_acc = accuracy_score(y_test, sklearn_preds)
         _, _, sk_f1 = precision_recall_f1(y_test, sklearn_preds, average="macro")
-        sk_auc = float(roc_auc_score(y_test, sklearn_probs[:, 1]))
+        sk_auc = safe_auc(y_test, sklearn_probs)
 
         # Printing results table
         print(f"{'Classifier':<25} | {'Accuracy':<10} | {'Macro F1':<10} | {'AUC-ROC':<10}")

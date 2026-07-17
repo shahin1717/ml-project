@@ -90,7 +90,7 @@ def _plot_degradation_curves(
 
 def run_experiment_5() -> None:
     """Run Experiment 5: noise robustness of AdaBoost vs Random Forest."""
-    datasets = ["breast_cancer", "adult", "mnist"]
+    datasets = ["breast_cancer", "adult", "mnist", "covertype"]
     print("================================================================================")
     print("Experiment 5: Noise Robustness (label flipping)")
     print("================================================================================")

@@ -23,15 +23,36 @@ def train_test_split(
     y: np.ndarray,
     test_size: float = 0.2,
     random_state: int | None = 42,
+    stratify: np.ndarray | None = None,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """Split features and target matrices into random train and test subsets."""
     rng = np.random.default_rng(random_state)
     n_samples = X.shape[0]
-    indices = rng.permutation(n_samples)
 
-    n_test = int(n_samples * test_size)
-    test_idx = indices[:n_test]
-    train_idx = indices[n_test:]
+    if stratify is not None:
+        y_strat = np.asarray(stratify)
+        classes = np.unique(y_strat)
+        train_indices_list = []
+        test_indices_list = []
+
+        for c in classes:
+            idx_c = rng.permutation(np.where(y_strat == c)[0])
+            n_test_c = max(1, int(np.round(len(idx_c) * test_size))) if len(idx_c) > 1 else 0
+            if len(idx_c) == 1:
+                train_indices_list.append(idx_c)
+            else:
+                test_indices_list.append(idx_c[:n_test_c])
+                train_indices_list.append(idx_c[n_test_c:])
+
+        train_idx = np.concatenate(train_indices_list)
+        test_idx = np.concatenate(test_indices_list)
+        rng.shuffle(train_idx)
+        rng.shuffle(test_idx)
+    else:
+        indices = rng.permutation(n_samples)
+        n_test = int(n_samples * test_size)
+        test_idx = indices[:n_test]
+        train_idx = indices[n_test:]
 
     return X[train_idx], X[test_idx], y[train_idx], y[test_idx]
 
@@ -101,16 +122,13 @@ def load_adult(data_dir: str = "data") -> tuple[np.ndarray, np.ndarray, np.ndarr
 
 def load_covertype(
     data_dir: str = "data",
-    n_samples: int | None = 10000,
+    n_samples: int | None = 30000,
     random_state: int | None = 42,
 ) -> tuple[np.ndarray, np.ndarray]:
     """Load a subset of the Covertype dataset and convert target to 0-indexed classes."""
     path = os.path.join(data_dir, "covtype.data")
 
-    # We read up to n_samples * 2 rows to have enough for a random sample,
-    # or all if n_samples is None
-    nrows = n_samples * 2 if n_samples else None
-    df = pd.read_csv(path, header=None, nrows=nrows)
+    df = pd.read_csv(path, header=None)
 
     if n_samples and len(df) > n_samples:
         df = df.sample(n=n_samples, random_state=random_state)

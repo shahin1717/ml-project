@@ -25,13 +25,12 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt  # type: ignore
 from sklearn.ensemble import RandomForestClassifier as SklearnRandomForestClassifier  # type: ignore
-from sklearn.metrics import roc_auc_score  # type: ignore
 
 from src.trees.decision_tree import DecisionTree
 from src.boosting.adaboost import AdaBoostClassifier
 from src.bagging.random_forest import RandomForestClassifier
 from src.metrics.evaluation import accuracy_score, precision_recall_f1
-from experiments.utils import get_dataset
+from experiments.utils import get_dataset, safe_auc
 
 N_ESTIMATORS = 100
 N_FOLDS = 5
@@ -123,9 +122,7 @@ def _evaluate_fold(model, X_train, y_train, X_test, y_test) -> tuple[float, floa
 
     acc = accuracy_score(y_test, y_pred)
     _, _, f1 = precision_recall_f1(y_test, y_pred, average="macro")
-    # All target datasets (breast_cancer, adult, mnist 3-vs-8) are binary,
-    # so AUC-ROC is computed against the probability of the positive class.
-    auc = float(roc_auc_score(y_test, proba[:, 1]))
+    auc = safe_auc(y_test, proba)
 
     return acc, f1, auc
 
@@ -136,7 +133,7 @@ def _evaluate_fold(model, X_train, y_train, X_test, y_test) -> tuple[float, floa
 
 def run_experiment_4() -> None:
     """Run Experiment 4: head-to-head comparison across datasets via 5-fold CV."""
-    datasets = ["breast_cancer", "adult", "mnist"]
+    datasets = ["breast_cancer", "adult", "mnist", "covertype"]
     print("================================================================================")
     print("Experiment 4: Head-to-Head Comparison (100 estimators, 5-fold CV)")
     print("================================================================================")

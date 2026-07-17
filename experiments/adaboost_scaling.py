@@ -6,7 +6,7 @@ from experiments.utils import get_dataset, plot_scaling_curve
 
 def run_experiment_2() -> None:
     """Run Experiment 2: AdaBoost scaling (train and test errors vs. n_estimators)."""
-    datasets = ["breast_cancer", "adult", "mnist"]
+    datasets = ["breast_cancer", "adult", "mnist", "covertype"]
     print("================================================================================")
     print("Experiment 2: AdaBoost Scaling")
     print("================================================================================")

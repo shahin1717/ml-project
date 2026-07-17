@@ -6,6 +6,7 @@ from src.utils.preprocessing import (
     load_breast_cancer,
     load_adult,
     load_mnist_subset,
+    load_covertype,
     train_test_split,
     standardize,
 )
@@ -53,6 +54,12 @@ def get_dataset(
             X, y, test_size=0.2, random_state=random_state
         )
 
+    elif name == "covertype":
+        X, y = load_covertype(data_dir=data_dir, n_samples=30000, random_state=random_state)
+        X_train, X_test, y_train, y_test = train_test_split(
+            X, y, test_size=0.2, random_state=random_state, stratify=y
+        )
+
     else:
         raise ValueError(f"Unknown dataset name: {name}")
 
@@ -88,3 +95,12 @@ def plot_scaling_curve(
     save_path = os.path.join("figures", save_filename)
     plt.savefig(save_path, dpi=150, bbox_inches="tight")
     plt.close()
+
+
+def safe_auc(y_test: np.ndarray, proba: np.ndarray) -> float:
+    """Compute AUC-ROC score, handling both binary (2-class) and multiclass scenarios."""
+    from sklearn.metrics import roc_auc_score  # type: ignore
+    if proba.shape[1] == 2:
+        return float(roc_auc_score(y_test, proba[:, 1]))
+    else:
+        return float(roc_auc_score(y_test, proba, multi_class="ovr", average="macro"))
