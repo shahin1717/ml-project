@@ -280,8 +280,8 @@
       \textbf{Key findings (Binary):}
       \begin{itemize}\footnotesize
         \item \textbf{Breast Cancer:} AdaBoost wins on accuracy ($0.9755 \pm 0.0186$) — sequential re-weighting excels on clean, low-noise data.
-        \item \textbf{Adult Income:} Custom RF outperforms AdaBoost on AUC-ROC ($0.9169$ vs. $0.9073$) — bagging handles class imbalance robustly.
-        \item \textbf{MNIST 3-vs-8:} RF dominates ($0.9808 \pm 0.0035$) — random subspacing handles high dimensionality (784 features) by decorrelating trees.
+        \item \textbf{Adult Income:} Custom RF outperforms AdaBoost on AUC-ROC ($0.9169$ vs. $0.9073$) - bootstrap averaging handles the class imbalance more robustly than weight amplification.
+        \item \textbf{MNIST 3-vs-8:} RF dominates ($0.9808 \pm 0.0035$) - random subspacing effectively handles 784 noisy pixel features; AdaBoost struggles with high dimensionality
       \end{itemize}
     \end{column}
     \begin{column}{0.48\textwidth}
