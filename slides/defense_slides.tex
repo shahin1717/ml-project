@@ -98,7 +98,7 @@
     Breast Cancer Wisconsin & 569     & 30  & 2 & Small, low-noise, well-separated classes \\
     Adult Income (Census)   & 45\,222 & 100 & 2 & Large, class imbalance ($\approx$76\% negative) \\
     MNIST 3-vs-8            & 6\,000  & 784 & 2 & High-dimensional, visual digit representation \\
-    Forest Covertype        & 30\,000 & 54  & 7 & Multiclass, severe imbalance ($\approx$0.5\% minority) \\
+    Forest Covertype        & 30\,000 & 54  & 7 & Multiclass, severe imbalance (0.457\% minority, 137/30,000) \\
     \bottomrule
   \end{tabular}
   \vspace{6pt}
@@ -193,11 +193,11 @@
 % ----- %
 \begin{frame}{Exp.\,1 - Correctness: Custom Tree vs.\ Sklearn}
   \begin{columns}[T]
-    \begin{column}{0.50\textwidth}
-      \small
+    \begin{column}{0.52\textwidth}
+      \footnotesize
       \textbf{Why this matters:}\\
-      A from-scratch implementation risks subtle numerical deviations in split search, class probability estimation, or threshold midpoint computation. Agreement within 2\% provides empirical evidence that our tree is algorithmically equivalent.
-      \vspace{6pt}
+      Agreement within 2\% limits provides empirical evidence that our from-scratch implementation is algorithmically equivalent to scikit-learn.
+      \vspace{4pt}
 
       \begin{tabular}{lccc}
         \toprule
@@ -206,16 +206,17 @@
         Breast Cancer & 0.9469 & 0.9469 & 0.0000 \\
         Adult Income  & 0.8092 & 0.8105 & 0.0013 \\
         MNIST 3-vs-8  & 0.9292 & 0.9317 & 0.0025 \\
+        Covertype     & 0.7802 & 0.7780 & 0.0022 \\
         \bottomrule
       \end{tabular}
-      \vspace{6pt}
+      \vspace{4pt}
 
-      \textbf{Interpretation:} All differences $\le 0.0025 \ll 0.02$ threshold. The marginal Adult/MNIST gaps arise from tie-breaking order in split search - not from algorithmic error.
+      \textbf{Interpretation:} All test accuracy differences $\le 0.0025 \ll 0.02$ specification. Gaps arise from split search tie-breaking.
     \end{column}
-    \begin{column}{0.50\textwidth}
+    \begin{column}{0.48\textwidth}
       \centering
-      \includegraphics[width=\linewidth]{figures/head_to_head_accuracy_breast_cancer.png}\\
-      \scriptsize\vspace{2pt} 5-fold CV (Exp 4) confirms the custom tree generalises comparably to sklearn across all folds, with ensemble models substantially outperforming the single tree.
+      \includegraphics[width=0.9\linewidth]{figures/head_to_head_accuracy_breast_cancer.png}\\
+      \scriptsize\vspace{2pt} CV folds (Exp 4) show our custom tree generalises comparably to sklearn baseline.
     \end{column}
   \end{columns}
 \end{frame}
@@ -224,95 +225,141 @@
 \begin{frame}{Exp.\,2 - AdaBoost Scaling: \#Stumps vs.\ Accuracy}
   \begin{columns}[T]
     \begin{column}{0.48\textwidth}
-      \small
+      \footnotesize
       \textbf{What we measure:} Staged train and test accuracy as $T$ (number of stumps) grows from 1 to 200.
-      \vspace{6pt}
+      \vspace{4pt}
 
-      \textbf{Expected behaviour:} AdaBoost's additive model converges because each stump contributes a small, targeted correction in hypothesis space. The exponential weight update ensures that already-correct examples receive less attention each round.
-      \vspace{6pt}
-
-      \textbf{Key finding:}
-      \begin{itemize}\small
-        \item Accuracy saturates around $T \approx 50$-$80$ on Breast Cancer.
-        \item Train and test curves remain close - no catastrophic overfitting because stumps are maximally regularised (depth-1).
-        \item Early-stop triggers on Adult Income where imbalance pushes $\epsilon_m$ near $(K-1)/K$.
-      \end{itemize}
-    \end{column}
-    \begin{column}{0.52\textwidth}
-      \centering
-      \includegraphics[width=\linewidth]{figures/adaboost_scaling_breast_cancer.png}\\
-      \scriptsize\vspace{2pt}\textbf{Breast Cancer.} The near-zero train/test gap demonstrates that depth-1 stumps are weak enough to avoid memorisation, yet ensemble aggregation achieves strong generalisation.
-    \end{column}
-  \end{columns}
-\end{frame}
-
-% ----- %
-\begin{frame}{Exp.\,3 - Random Forest Scaling: Trees \& Depth}
-  \begin{columns}[T]
-    \begin{column}{0.48\textwidth}
-      \small
-      \textbf{(a) Varying \#trees ($T$), fixed max-depth = $\infty$:}
-
-      OOB score converges quickly ($T \approx 60$) - consistent with the theoretical result that the ensemble error is bounded by $\bar{\rho}\bar{s}^2$, where $\bar{\rho}$ is mean inter-tree correlation. Once $T$ is large enough, adding more trees offers negligible decorrelation benefit.
-
-      \vspace{6pt}
-      \textbf{(b) Varying max-depth, fixed $T = 100$:}
-
-      Accuracy plateaus after depth $\approx 4$-$6$. Deeper trees individually overfit but their errors \emph{cancel} via averaging. This is a direct demonstration that bagging \emph{converts} variance into diversity.
-    \end{column}
-    \begin{column}{0.52\textwidth}
-      \centering
-      \includegraphics[width=0.88\linewidth]{figures/rf_estimators_scaling_breast_cancer.png}\\
-      \scriptsize\vspace{2pt}\textbf{(a)} OOB accuracy converges well before $T=100$.\\[6pt]
-      \includegraphics[width=0.88\linewidth]{figures/rf_depth_scaling_breast_cancer.png}\\
-      \scriptsize\vspace{2pt}\textbf{(b)} Accuracy saturates at depth 4; deeper trees add no benefit.
-    \end{column}
-  \end{columns}
-\end{frame}
-
-% ----- %
-\begin{frame}{Exp.\,4 - Head-to-Head: 5-fold Cross-Validation}
-  \begin{columns}[T]
-    \begin{column}{0.50\textwidth}
-      \small
-      \textbf{Protocol:} Stratified 5-fold CV, $T=100$ estimators, three metrics (Accuracy, Macro-F1, AUC-ROC) on all datasets.
-      \vspace{6pt}
+      \textbf{Expected behaviour:} AdaBoost's additive model converges because each stump contributes a small correction. The exponential weight update ensures that already-correct examples receive less attention.
+      \vspace{4pt}
 
       \textbf{Key findings:}
-      \begin{itemize}\small
-        \item \textbf{Breast Cancer:} AdaBoost achieves highest accuracy ($0.9755 \pm 0.0186$) - sequential re-weighting exploits the clean, low-noise structure.
-        \item \textbf{Adult Income:} Custom RF outperforms AdaBoost on AUC-ROC ($0.9169$ vs. $0.9073$) - bootstrap averaging handles the class imbalance more robustly.
-        \item \textbf{MNIST 3-vs-8:} RF dominates ($0.9808 \pm 0.0035$) - random subspacing effectively handles 784 pixel features.
-        \item \textbf{Forest Covertype:} AdaBoost's macro-F1 collapses to $0.3186 \pm 0.0093$ due to ignoring rare classes, whereas RF achieves $0.7457 \pm 0.0245$ (sklearn) and $0.6501 \pm 0.0258$ (custom), demonstrating RF's superior imbalance tolerance.
+      \begin{itemize}\footnotesize
+        \item Accuracy saturates around $T \approx 50$-$80$ on Breast Cancer.
+        \item Small train-test gap — no catastrophic overfitting due to low capacity (depth-1).
+        \item Early stopping triggers on Adult Income where severe imbalance pushes error rate $\epsilon_m$ near $(K-1)/K$.
       \end{itemize}
     \end{column}
-    \begin{column}{0.50\textwidth}
+    \begin{column}{0.52\textwidth}
       \centering
-      \includegraphics[width=\linewidth]{figures/head_to_head_accuracy_breast_cancer.png}\\
-      \scriptsize\vspace{2pt}\textbf{Breast Cancer:} both ensembles substantially outperform the single tree. AdaBoost leads narrowly due to dataset's clean, low-variance structure.
+      \includegraphics[width=0.9\linewidth]{figures/adaboost_scaling_breast_cancer.png}\\
+      \scriptsize\vspace{2pt}\textbf{Breast Cancer.} Near-zero train-test gap confirms depth-1 stumps avoid memorisation, yet aggregate strong generalisation.
     \end{column}
   \end{columns}
 \end{frame}
 
 % ----- %
-\begin{frame}{Exp.\,5 - Noise Robustness}
+\begin{frame}{Exp.\,3 - Random Forest: Trees \& Depth Scaling}
   \begin{columns}[T]
-    \begin{column}{0.48\textwidth}
-      \small
-      \textbf{Protocol:} Randomly flip $\eta \in \{0, 0.05, 0.10, 0.20\}$ fraction of training labels. Measure resulting test accuracy.
-      \vspace{6pt}
+    \begin{column}{0.52\textwidth}
+      \footnotesize
+      \textbf{(a) Varying \#trees ($T$), depth = $\infty$:}
+      OOB accuracy converges quickly ($T \approx 60$). Bounded by mean inter-tree correlation $\bar{\rho}$: adding more trees offers negligible decorrelation benefit.
 
-      \textbf{Mechanistic explanation:}
-      \begin{itemize}\small
-        \item AdaBoost's weight update \emph{amplifies} focus on misclassified examples. Under label noise, truly mislabelled samples receive exponentially increasing weight - learning corrupted labels.
-        \item Random Forest's bootstrap sampling dilutes each corrupted label: on average, a flipped label appears in only $\approx$63\% of trees.
-        \item \textbf{Covertype regularisation:} On Covertype, introducing noise actually \emph{improves} AdaBoost accuracy from $0.5927$ to $0.6782$ (fitted estimators remains $100$). The noise acts as a stochastic regularizer that prevents AdaBoost from over-focusing on hard dominant-class samples.
+      \vspace{4pt}
+      \textbf{(b) Varying max-depth, $T = 100$:}
+      Accuracy plateaus at depth 4--6 on Breast Cancer, but rises up to depth 20 on Covertype, proving that optimal tree depth is dataset-complexity dependent. Individual tree overfitting is cancelled out by averaging (bagging converts variance to diversity).
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \includegraphics[width=0.7\linewidth]{figures/rf_estimators_scaling_breast_cancer.png}\\
+      \scriptsize\vspace{1pt}\textbf{(a)} OOB accuracy converges before $T=100$.\\[4pt]
+      \includegraphics[width=0.7\linewidth]{figures/rf_depth_scaling_breast_cancer.png}\\
+      \scriptsize\vspace{1pt}\textbf{(b)} Accuracy saturates early on simple datasets.
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% ----- %
+\begin{frame}{Exp.\,4 - Head-to-Head: Binary Datasets}
+  \begin{columns}[T]
+    \begin{column}{0.52\textwidth}
+      \footnotesize
+      \textbf{Protocol:} Stratified 5-fold CV, $T=100$ estimators, measuring Accuracy, Macro-F1, and AUC-ROC.
+      \vspace{4pt}
+
+      \textbf{Key findings (Binary):}
+      \begin{itemize}\footnotesize
+        \item \textbf{Breast Cancer:} AdaBoost wins on accuracy ($0.9755 \pm 0.0186$) — sequential re-weighting excels on clean, low-noise data.
+        \item \textbf{Adult Income:} Custom RF outperforms AdaBoost on AUC-ROC ($0.9169$ vs. $0.9073$) — bagging handles class imbalance robustly.
+        \item \textbf{MNIST 3-vs-8:} RF dominates ($0.9808 \pm 0.0035$) — random subspacing handles high dimensionality (784 features) by decorrelating trees.
       \end{itemize}
     \end{column}
-    \begin{column}{0.52\textwidth}
+    \begin{column}{0.48\textwidth}
       \centering
-      \includegraphics[width=\linewidth]{figures/noise_robustness_breast_cancer.png}\\
-      \scriptsize\vspace{2pt}\textbf{Breast Cancer:} AdaBoost loses $-7.96\%$ accuracy at $\eta=0.20$; RF loses $0.00\%$. The re-weighting mechanism that gives AdaBoost its bias-reduction power becomes its critical weakness under label noise.
+      \includegraphics[width=0.95\linewidth]{figures/head_to_head_accuracy_breast_cancer.png}\\
+      \scriptsize\vspace{2pt} 5-fold CV confirms both ensembles substantially outperform the single tree on Breast Cancer.
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% ----- %
+\begin{frame}{Exp.\,4 - Head-to-Head: Covertype Multiclass}
+  \begin{columns}[T]
+    \begin{column}{0.52\textwidth}
+      \footnotesize
+      \textbf{Severe Imbalance Challenge:}
+      Covertype subset ($N=30,000$, $7$ classes) has a minority class of just $0.457\%$ ($137$ samples).
+      \vspace{4pt}
+
+      \textbf{Macro-F1 Collapse findings:}
+      \begin{itemize}\footnotesize
+        \item \textbf{AdaBoost collapse:} Macro-F1 drops to $0.3186 \pm 0.0093$ because its stumps ignore rare classes to maximize global accuracy.
+        \item \textbf{Random Forest resilience:} RF achieves $0.7457 \pm 0.0245$ (sklearn) and $0.6501 \pm 0.0258$ (custom). Bootstrapping preserves minority representation.
+        \item \textbf{RF Ensemble Gap:} The 4.08\% custom-to-sklearn RF gap is an ensemble-level artifact (single tree matched within 0.22\%).
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \includegraphics[width=0.95\linewidth]{figures/head_to_head_macro_f1_covertype.png}\\
+      \scriptsize\vspace{2pt} Covertype Macro-F1 comparison. AdaBoost collapses under severe imbalance, whereas Random Forest maintains high Macro-F1.
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% ----- %
+\begin{frame}{Exp.\,5 - Noise Robustness: Binary Datasets}
+  \begin{columns}[T]
+    \begin{column}{0.52\textwidth}
+      \footnotesize
+      \textbf{Protocol:} Randomly flip $\eta \in \{0, 0.05, 0.10, 0.20\}$ fraction of training labels. Measure resulting test accuracy.
+      \vspace{4pt}
+
+      \textbf{Mechanistic explanation:}
+      \begin{itemize}\footnotesize
+        \item \textbf{AdaBoost vulnerability:} Weight update exponentially amplifies focus on misclassified examples. Truly mislabelled samples receive massive weights, forcing stumps to fit noise and warping decision boundaries.
+        \item \textbf{Random Forest resilience:} Bootstrap sampling dilutes corrupted labels — a flipped label appears in $\approx 63\%$ of trees. Averaging acts as a low-pass filter to reject noise.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \includegraphics[width=0.95\linewidth]{figures/noise_robustness_breast_cancer.png}\\
+      \scriptsize\vspace{2pt}\textbf{Breast Cancer:} AdaBoost drops $-7.96\%$ at $\eta=0.20$ while RF loses $0.00\%$. The bias-reduction power of AdaBoost becomes a liability under label corruption.
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% ----- %
+\begin{frame}{Exp.\,5 - Noise Robustness: Covertype Anomaly}
+  \begin{columns}[T]
+    \begin{column}{0.52\textwidth}
+      \footnotesize
+      \textbf{Regularisation Anomaly:}
+      On Covertype, introducing label noise actually \emph{improves} AdaBoost test accuracy:
+      \[
+        0.5927 \to 0.6782 \text{ at } \eta=0.05 \text{ ($+8.5\%$ gain)}
+      \]
+      \vspace{2pt}
+      \textbf{Recall-based Diagnostics:}
+      \begin{itemize}\scriptsize
+        \item \textbf{At $\eta=0.00$:} AdaBoost chases rare minority classes (achieving $40.0\%$ recall on Class 5, $7.73\%$ on Class 6) at the cost of distorting dominant boundaries (Class 1 recall is only $53.6\%$).
+        \item \textbf{At $\eta > 0$:} Injected noise makes rare classes unlearnable. AdaBoost "gives up" on them (Class 5 recall drops to $1.1\%$, Class 6 to $0\%$) and focuses entirely on dominant classes (Classes 0, 1, 2).
+        \item Dominant recalls rise (Class 1 $\to 74.8\%$; Class 2 $\to 71.0\%$), yielding overall accuracy gains.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \includegraphics[width=0.95\linewidth]{figures/noise_robustness_covertype.png}\\
+      \scriptsize\vspace{2pt}\textbf{Covertype:} Label noise acts as a regulariser under severe imbalance by forcing the booster to abandon unlearnable rare classes.
     \end{column}
   \end{columns}
 \end{frame}
@@ -371,24 +418,25 @@
 \begin{frame}{Bonus: GBM vs.\ AdaBoost \& SAMME vs.\ SAMME.R}
   \begin{columns}[T]
     \begin{column}{0.50\textwidth}
-      \small
+      \scriptsize
       \textbf{GBM vs.\ AdaBoost (5-fold CV):}
-      \begin{itemize}\small
-        \item AdaBoost outperforms custom GBM across all datasets.
-        \item GBM uses regression trees on pseudo-residuals (log-loss gradient) - our depth-2 booster may be under-capacity for complex boundaries.
-        \item AdaBoost's \emph{exponential loss} is a tighter upper bound on 0-1 loss than log-loss, which may partly explain the gap.
+      \begin{itemize}\scriptsize
+        \item AdaBoost outperforms custom GBM across all binary datasets.
+        \item Custom GBM uses higher-capacity depth-3 trees but is under-converged at learning rate 0.1 and 100 estimators.
+        \item Stumps are extremely low capacity, allowing AdaBoost to quickly extract signal and converge within the fixed round budget.
       \end{itemize}
-      \vspace{6pt}
+      \vspace{4pt}
       \textbf{SAMME vs.\ SAMME.R (Iris, 80 rounds):}
-      \begin{itemize}\small
-        \item Both reach 90\% test accuracy.
-        \item SAMME.R log-loss: \textbf{0.1889} vs.\ SAMME: 0.6648 - SAMME.R produces \emph{far better calibrated} probability estimates because it updates on soft class probabilities rather than hard class votes.
+      \begin{itemize}\scriptsize
+        \item Both algorithms achieve 90\% test accuracy.
+        \item SAMME.R log-loss is \textbf{0.1889} vs.\ SAMME's 0.6648.
+        \item SAMME.R produces far better calibrated class probabilities because it updates on soft probability estimates rather than hard votes.
       \end{itemize}
     \end{column}
     \begin{column}{0.50\textwidth}
       \centering
-      \includegraphics[width=\linewidth]{figures/gbm_vs_adaboost_breast_cancer.png}\\
-      \scriptsize\vspace{2pt} AdaBoost vs.\ GBM across CV folds (Breast Cancer). AdaBoost consistently outperforms.
+      \includegraphics[width=0.9\linewidth]{figures/gbm_vs_adaboost_breast_cancer.png}\\
+      \scriptsize\vspace{2pt} AdaBoost vs.\ GBM across CV folds (Breast Cancer). AdaBoost consistently converges faster.
     \end{column}
   \end{columns}
 \end{frame}
