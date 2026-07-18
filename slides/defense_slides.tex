@@ -110,85 +110,48 @@
 \end{frame}
 
 % ----- %
-\begin{frame}{Method 1: Decision Tree (CART)}
+\begin{frame}{Methods: CART, AdaBoost, Random Forest}
   \begin{columns}[T]
-    \begin{column}{0.52\textwidth}
-      \begin{itemize}\small
-        \item Recursive binary splits: choose the threshold that maximises the \emph{information gain}:
+    \begin{column}{0.335\textwidth}
+      \textbf{\small 1. Decision Tree (CART)}
+      \begin{itemize}\scriptsize
+        \item Binary splits maximising information gain:
         \[
-        \Delta I = I(S) - \frac{|S_L|}{|S|}I(S_L) - \frac{|S_R|}{|S|}I(S_R)
+        \Delta I = I(S) - \tfrac{|S_L|}{|S|}I(S_L) - \tfrac{|S_R|}{|S|}I(S_R)
         \]
-        \item Naive search is $O(N^2 P)$; we replace it with a single sort + \texttt{np.cumsum} sweep: $O(N\!\log\!N \cdot P)$.
-        \item Weighted Gini/entropy impurity: critical for AdaBoost where each sample carries a different weight.
-        \item Stopping criteria: max depth, min leaf size, zero impurity gain, all-identical features.
+        \item Sort + \texttt{np.cumsum} sweep: $O(N\!\log\!N \cdot P)$ instead of naive $O(N^2 P)$.
+        \item Weighted Gini/entropy — needed for AdaBoost's per-sample weights.
+        \item Stops on: max depth, min leaf size, zero gain, identical features.
       \end{itemize}
     \end{column}
-    \begin{column}{0.48\textwidth}
-      \centering
-      \includegraphics[width=\linewidth]{figures/rf_depth_scaling_breast_cancer.png}\\
-      \scriptsize\vspace{2pt} Accuracy plateaus after depth $\approx4$ on Breast Cancer - deeper trees gain no purity but increase variance.
-    \end{column}
-  \end{columns}
-\end{frame}
-
-% ----- %
-\begin{frame}{Method 2: AdaBoost (Discrete SAMME)}
-  \begin{columns}[T]
-    \begin{column}{0.50\textwidth}
-      \small At each round $m$: fit a depth-1 stump $h_m$ on the current weight distribution, then
+    \begin{column}{0.335\textwidth}
+      \textbf{\small 2. AdaBoost (SAMME)}
+      \scriptsize Each round $m$: fit stump $h_m$ on weights $w^{(m)}$, then
       \[
-      \epsilon_m = \sum_i w_i^{(m)}\mathbf{1}[h_m(x_i)\neq y_i]
+      \epsilon_m = \textstyle\sum_i w_i^{(m)}\mathbf{1}[h_m(x_i)\neq y_i]
       \]
       \[
-      \alpha_m = \ln\!\frac{1-\epsilon_m}{\epsilon_m} + \ln(K-1)
+      \alpha_m = \ln\!\tfrac{1-\epsilon_m}{\epsilon_m} + \ln(K-1)
       \]
       \[
-      w_i^{(m+1)} \propto w_i^{(m)}\exp\!\bigl(\alpha_m\cdot\mathbf{1}[h_m(x_i)\neq y_i]\bigr)
+      w_i^{(m+1)} \propto w_i^{(m)}e^{\alpha_m \mathbf{1}[h_m(x_i)\neq y_i]}
       \]
-      \vspace{4pt}
-      Early-stop when $\epsilon_m \ge (K-1)/K$ (stump is no better than chance).
+      Early-stop when $\epsilon_m \ge (K-1)/K$.
     \end{column}
-    \begin{column}{0.50\textwidth}
-      \centering
-      \includegraphics[width=\linewidth]{figures/adaboost_scaling_breast_cancer.png}\\
-      \scriptsize\vspace{2pt} Train/test accuracy vs.\ number of stumps. Test accuracy saturates around 50 stumps - Exp 2 determines the optimal ensemble size across datasets.
-    \end{column}
-  \end{columns}
-\end{frame}
-
-% ----- %
-\begin{frame}{Method 3: Random Forest}
-  \begin{columns}[T]
-    \begin{column}{0.50\textwidth}
-      \begin{itemize}\small
-        \item Each tree trained on a \emph{bootstrap} sample of size $N$ (with replacement); OOB samples form a free validation set.
-        \item At each node, only $\lfloor\sqrt{P}\rfloor$ randomly selected features are considered - this \emph{decorrelates} trees, which is the mechanism that reduces variance.
-        \item Trees grown in parallel via \texttt{multiprocessing.Pool}.
-        \item Final prediction: majority vote (classification); OOB score is an unbiased accuracy estimate without a hold-out split.
+    \begin{column}{0.33\textwidth}
+      \textbf{\small 3. Random Forest}
+      \begin{itemize}\scriptsize
+        \item Bootstrap sample of size $N$ per tree; OOB samples give a free validation set.
+        \item $\lfloor\sqrt{P}\rfloor$ random features per node split — decorrelates trees, which is what reduces variance.
+        \item Trees trained in parallel via \texttt{multiprocessing.Pool}.
+        \item Prediction: majority vote; \texttt{predict\_proba} averages tree probabilities.
       \end{itemize}
     \end{column}
-    \begin{column}{0.50\textwidth}
-      \centering
-      \includegraphics[width=\linewidth]{figures/rf_estimators_scaling_breast_cancer.png}\\
-      \scriptsize\vspace{2pt} Accuracy vs.\ number of trees (Breast Cancer). OOB score converges near $T=60$, demonstrating variance reduction saturates quickly.
-    \end{column}
   \end{columns}
+  \vspace{6pt}
+  \scriptsize\centering All three implemented from scratch in NumPy — see Exp.\,1--3 for the corresponding empirical results and figures.
 \end{frame}
 
-% ----- %
-\begin{frame}{Experimental Design Overview}
-  \small
-  \begin{itemize}
-    \item \textbf{Exp.\,1} \emph{Correctness verification}: custom tree vs.\ sklearn on a fixed 80/20 split. Requirement: $|\Delta\text{acc}| \le 2\%$.
-    \item \textbf{Exp.\,2} \emph{AdaBoost scaling}: test accuracy vs.\ \#stumps from 1 to 200. Identifies saturation and over-fitting regime.
-    \item \textbf{Exp.\,3} \emph{Random Forest scaling}: (a) accuracy vs.\ \#trees; (b) accuracy vs.\ max depth. Examines variance reduction convergence.
-    \item \textbf{Exp.\,4} \emph{Head-to-head}: stratified 5-fold CV, 100 estimators - fair multi-metric comparison (Accuracy, Macro-F1, AUC-ROC).
-    \item \textbf{Exp.\,5} \emph{Noise robustness}: random label flips at $\eta \in \{0, 0.05, 0.10, 0.20\}$.
-    \item \textbf{Exp.\,6} \emph{Bias-variance decomposition}: $B{=}100$ bootstrap replicates of training, Breast Cancer dataset.
-    \item \textbf{Exp.\,7} \emph{Unsupervised structure}: PCA scree, K-Means elbow, DBSCAN $k$-distance, PCA scatter.
-    \item \textbf{Bonus}: SAMME vs.\ SAMME.R calibration; GBM vs.\ AdaBoost.
-  \end{itemize}
-\end{frame}
 
 % ----- %
 \begin{frame}{Exp.\,1 - Correctness: Custom Tree vs.\ Sklearn}
@@ -429,7 +392,7 @@
       \textbf{SAMME vs.\ SAMME.R (Iris, 80 rounds):}
       \begin{itemize}\scriptsize
         \item Both algorithms achieve 90\% test accuracy.
-        \item SAMME.R log-loss is \textbf{0.1889} vs.\ SAMME's 0.6648.
+        \item SAMME.R log-loss is \textbf{0.1322} vs.\ SAMME's 0.6648.
         \item SAMME.R produces far better calibrated class probabilities because it updates on soft probability estimates rather than hard votes.
       \end{itemize}
     \end{column}
