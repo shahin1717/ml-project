@@ -147,49 +147,76 @@ All experiments must be automated and fully reproducible via a single script: `p
 ml-project/
 ├── README.md                       # Setup, dependencies, and execution guide
 ├── requirements.txt                # Pinned python packages
-├── .gitignore                      # Ignore large datasets, checkpoints, and compiled TeX
+├── .gitignore                      # Git ignore patterns
 ├── download_data.sh                # Bash script to fetch datasets
+├── download_data.py                # Python script to download datasets
 ├── contribution_report.pdf         # Individual contributions report (signed)
-├── src/
+├── experiment_runs.log             # Reproducible execution logs of all experiments
+├── src/                            # From-scratch implementations source code
 │   ├── __init__.py
 │   ├── trees/
 │   │   ├── __init__.py
 │   │   └── decision_tree.py        # Decision Tree class & DecisionStump subclass
 │   ├── boosting/
 │   │   ├── __init__.py
-│   │   └── adaboost.py             # AdaBoostClassifier class
+│   │   ├── adaboost.py             # AdaBoostClassifier class (SAMME & SAMME.R)
+│   │   └── gradient_boosting.py    # Custom Gradient Boosting Classifier
 │   ├── bagging/
 │   │   ├── __init__.py
-│   │   └── random_forest.py        # RandomForestClassifier class
+│   │   └── random_forest.py        # RandomForestClassifier class (parallelized)
 │   ├── unsupervised/
 │   │   ├── __init__.py
 │   │   ├── pca.py                  # Principal Component Analysis
 │   │   ├── kmeans.py               # K-Means clustering
-│   │   └── dbscan.py               # DBSCAN clustering
+│   │   ├── dbscan.py               # DBSCAN clustering
+│   │   └── tsne_comparison.py      # t-SNE evaluation module
 │   ├── metrics/
 │   │   ├── __init__.py
 │   │   └── evaluation.py           # Custom evaluation metrics (macro F1, accuracy, etc.)
 │   ├── utils/
 │   │   ├── __init__.py
-│   │   └── preprocessing.py        # Standardizer, label encoders, oversampling / SMOTE
+│   │   └── preprocessing.py        # StandardScaler, LabelEncoder, train_test_split
 │   └── experiments/
 │       ├── __init__.py
-│       ├── run_all.py              # Main execution script running all experiments
-│       └── utils.py                # Dataset loaders & experimental helpers
-├── tests/
+│       └── run_all.py              # Main execution script orchestrating all experiments
+├── experiments/                    # Core experiment script modules
+│   ├── utils.py                    # Dataset loading & plot helpers
+│   ├── scaling.py                  # Experiment 1 baseline comparison
+│   ├── adaboost_scaling.py         # Experiment 2 AdaBoost scaling
+│   ├── rf_scaling.py               # Experiment 3 Random Forest scaling (estimators & depth)
+│   ├── head_to_head.py             # Experiment 4 cross-validation head-to-head comparison
+│   ├── noise_robustness.py         # Experiment 5 label noise robustness evaluation
+│   ├── bias_variance.py            # Experiment 6 quantitative bias-variance decomposition
+│   ├── unsupervised_analysis.py    # Experiment 7 PCA, K-Means, and DBSCAN pipeline
+│   ├── gbm_vs_adaboost.py          # Bonus: Custom Gradient Boosting vs AdaBoost
+│   ├── sammer_comparison.py        # Bonus: SAMME vs SAMME.R calibration
+│   ├── verify_split.py             # Utility to verify Covertype stratified train/test split
+│   └── tsne_all_datasets.py        # t-SNE visualization script
+├── tests/                          # Automated unit test suite (91% total coverage)
 │   ├── __init__.py
-│   ├── test_decision_tree.py       # Unit tests for Decision Tree / Stumps
-│   ├── test_adaboost.py            # Unit tests for AdaBoost
-│   ├── test_random_forest.py       # Unit tests for Random Forest
-│   └── test_unsupervised.py        # Unit tests for PCA, K-Means, DBSCAN
-├── notebooks/                      # Development & exploration notebooks (optional bonus)
-├── figures/                        # Generated charts & plots for the report
-├── data/                           # Downloaded datasets (git-ignored, except script)
+│   ├── test_decision_tree.py       # CART tree and stumps tests
+│   ├── test_adaboost.py            # AdaBoost classifier tests
+│   ├── test_random_forest.py       # Random Forest classifier tests
+│   ├── test_gradient_boosting.py   # Gradient Boosting classifier tests
+│   ├── test_pca.py                 # PCA tests
+│   ├── test_kmeans.py              # K-Means tests
+│   ├── test_dbscan.py              # DBSCAN tests
+│   ├── test_preprocessing.py       # Standardizer and splitter tests
+│   ├── test_evaluation.py          # Custom metrics tests
+│   ├── test_bias_variance.py       # Bias-variance decomposition tests
+│   └── test_tsne_comparison.py     # t-SNE helper tests
+├── slides/                         # Defense materials & explanation guides (git-ignored)
+│   ├── defense_slides.tex          # LaTeX presentation slides
+│   ├── explanation.md              # Unified QA explanation guide
+│   ├── code_explanation.md         # Comprehensive mathematical codebase documentation
+│   └── script.md                   # Presentation oral defense script
+├── figures/                        # Generated experimental plots & charts for report
+├── data/                           # Downloaded datasets (git-ignored)
 ├── report/
-│   ├── report.tex                  # LaTeX source document
-│   └── report.pdf                  # Compiled IEEE-style report
+│   ├── report.tex                  # LaTeX source report document
+│   └── report.pdf                  # Compiled IEEE-style PDF report
 └── presentation/
-    └── presentation.pdf            # Oral presentation slide deck
+    └── presentation.pdf            # Compiled Beamer slide deck PDF
 ```
 
 ---
